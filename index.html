@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FBF7F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1A1613" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quaderno">
+<title>Quaderno di Regia</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#FBF7F1; --surface:#FFFFFF; --surface-2:#F4EEE5; --surface-3:#EBE3D7;
+  --ink:#2A211C; --muted:#76695E; --line:rgba(42,33,28,.11); --line-strong:rgba(42,33,28,.2);
+  --accent:#B23A3A; --accent-press:#962F2F; --accent-ink:#FFFFFF; --accent-soft:#F7E4E1;
+  --gold:#C98F22; --gold-soft:#F8ECD3; --green:#3F7A45; --green-soft:#E1EFDF;
+  --c-riscaldamento:#D39A2C; --c-fiducia:#3A7D77; --c-improvvisazione:#B23A3A; --c-voce:#8A4F7A;
+  --c-movimento:#4A6590; --c-simbolico:#4F7942; --c-altro:#8A8178;
+  --shadow:0 1px 2px rgba(42,33,28,.06), 0 4px 14px rgba(42,33,28,.06);
+  --shadow-lg:0 12px 40px rgba(42,33,28,.18);
+  --radius:16px; --radius-sm:10px;
+  --font-display:'Fraunces', Georgia, serif;
+  --font-body:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --nav-h:64px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1A1613; --surface:#241E1A; --surface-2:#2E2621; --surface-3:#3A302A;
+    --ink:#F3EBE0; --muted:#B3A595; --line:rgba(243,235,224,.10); --line-strong:rgba(243,235,224,.2);
+    --accent:#E0645B; --accent-press:#C9554D; --accent-ink:#1A1613; --accent-soft:rgba(224,100,91,.16);
+    --gold:#E2B054; --gold-soft:rgba(226,176,84,.15); --green:#7DBB7F; --green-soft:rgba(125,187,127,.15);
+    --c-riscaldamento:#E2B054; --c-fiducia:#5FB0A8; --c-improvvisazione:#E0645B; --c-voce:#C68AB6;
+    --c-movimento:#86A3D0; --c-simbolico:#86B878; --c-altro:#A89F96;
+    --shadow:0 1px 2px rgba(0,0,0,.3); --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{ background:var(--bg); color:var(--ink); font-family:var(--font-body); font-size:16px; line-height:1.45; min-height:100vh; }
+button{ font-family:inherit; font-size:inherit; color:inherit; cursor:pointer; }
+input,select,textarea{ font-family:inherit; font-size:16px; color:var(--ink); }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+svg.i{ width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+
+/* ---------- TOP BAR ---------- */
+.topbar{ position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid var(--line); padding-top:env(safe-area-inset-top); }
+.topbar-inner{ max-width:760px; margin:0 auto; padding:10px 16px; display:flex; align-items:center; gap:10px; }
+.brand{ font-family:var(--font-display); font-weight:650; font-size:20px; letter-spacing:-.2px; flex:1; display:flex; align-items:center; gap:8px; }
+.brand-mark{ width:28px; height:28px; border-radius:8px; background:var(--accent); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; }
+.brand-mark svg{ width:17px; height:17px; }
+.sync{ font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+.sync-dot{ width:8px; height:8px; border-radius:50%; background:var(--green); }
+.sync.pending .sync-dot{ background:var(--gold); }
+.sync.err .sync-dot{ background:var(--accent); }
+.round-btn{ width:40px; height:40px; border-radius:50%; border:none; background:var(--surface-2); display:flex; align-items:center; justify-content:center; }
+.round-btn:active{ background:var(--surface-3); }
+
+/* ---------- LAYOUT ---------- */
+main{ max-width:760px; margin:0 auto; padding:16px 16px calc(var(--nav-h) + 96px + env(safe-area-inset-bottom)); }
+.h1{ font-family:var(--font-display); font-weight:650; font-size:28px; letter-spacing:-.4px; margin:4px 0 2px; line-height:1.15; }
+.h2{ font-family:var(--font-display); font-weight:650; font-size:19px; margin:0; }
+.sub{ color:var(--muted); font-size:14px; }
+.section-label{ font-size:12.5px; font-weight:650; letter-spacing:.6px; text-transform:uppercase; color:var(--muted); margin:26px 2px 10px; display:flex; align-items:center; justify-content:space-between; }
+.stack{ display:flex; flex-direction:column; gap:12px; }
+.row{ display:flex; align-items:center; gap:10px; }
+.grow{ flex:1; min-width:0; }
+
+/* ---------- BOTTOM NAV ---------- */
+.bottomnav{ position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--surface); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); }
+.bottomnav-inner{ max-width:760px; margin:0 auto; display:flex; height:var(--nav-h); }
+.navbtn{ flex:1; border:none; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:12px; font-weight:600; color:var(--muted); }
+.navbtn svg.i{ width:23px; height:23px; }
+.navbtn.active{ color:var(--accent); }
+.fab{ position:fixed; z-index:31; right:max(18px, calc(50vw - 380px + 18px)); bottom:calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); height:56px; padding:0 22px 0 18px; border-radius:28px; border:none; background:var(--accent); color:var(--accent-ink); font-weight:650; font-size:16px; display:flex; align-items:center; gap:8px; box-shadow:var(--shadow-lg); }
+.fab:active{ background:var(--accent-press); transform:scale(.98); }
+
+/* ---------- BUTTONS ---------- */
+.btn{ border:none; background:var(--accent); color:var(--accent-ink); font-weight:650; padding:12px 18px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:46px; }
+.btn:active{ background:var(--accent-press); }
+.btn.secondary{ background:var(--surface-2); color:var(--ink); }
+.btn.secondary:active{ background:var(--surface-3); }
+.btn.ghost{ background:transparent; color:var(--ink); border:1px solid var(--line-strong); }
+.btn.danger{ background:transparent; color:var(--accent); border:1px solid color-mix(in srgb, var(--accent) 40%, transparent); }
+.btn.small{ padding:7px 12px; min-height:36px; font-size:14px; border-radius:10px; }
+.btn.block{ width:100%; }
+.link-btn{ border:none; background:none; color:var(--accent); font-weight:650; padding:6px 4px; font-size:14.5px; display:inline-flex; align-items:center; gap:4px; }
+.icon-btn{ width:40px; height:40px; border:none; background:none; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--muted); flex-shrink:0; }
+.icon-btn:active{ background:var(--surface-2); }
+.icon-btn.danger{ color:var(--accent); }
+
+/* ---------- CARDS ---------- */
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+.card-pad{ padding:16px; }
+.tap{ cursor:pointer; }
+.tap:active{ background:var(--surface-2); }
+.empty{ text-align:center; padding:36px 20px; color:var(--muted); }
+.empty svg.i{ width:40px; height:40px; stroke-width:1.4; margin-bottom:8px; opacity:.6; }
+.empty p{ margin:0 auto 16px; max-width:340px; font-size:15px; }
+
+/* ---------- WEEK STRIP ---------- */
+.week-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.week-month{ font-weight:650; font-size:15px; text-transform:capitalize; }
+.week{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+.day{ border:none; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:8px 0 9px; display:flex; flex-direction:column; align-items:center; gap:2px; position:relative; }
+.day-name{ font-size:11.5px; font-weight:600; color:var(--muted); text-transform:uppercase; }
+.day-num{ font-size:18px; font-weight:650; }
+.day-dot{ width:6px; height:6px; border-radius:50%; background:transparent; margin-top:2px; }
+.day.has .day-dot{ background:var(--accent); }
+.day.today .day-num{ color:var(--accent); }
+.day.sel{ background:var(--ink); border-color:var(--ink); }
+.day.sel .day-name, .day.sel .day-num{ color:var(--bg); }
+.day.sel.has .day-dot{ background:var(--bg); }
+.day-title{ margin:22px 2px 12px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+
+/* ---------- SESSION CARD ---------- */
+.s-card{ overflow:hidden; }
+.s-head{ display:flex; gap:14px; padding:16px 16px 12px; }
+.s-time{ min-width:52px; text-align:left; }
+.s-time .t1{ font-weight:700; font-size:17px; font-variant-numeric:tabular-nums; }
+.s-time .t2{ color:var(--muted); font-size:13.5px; font-variant-numeric:tabular-nums; }
+.s-lab{ font-size:13px; font-weight:650; color:var(--accent); text-transform:uppercase; letter-spacing:.4px; }
+.s-title{ font-weight:650; font-size:17px; margin-top:1px; }
+.s-meta{ color:var(--muted); font-size:13.5px; margin-top:2px; }
+.progress{ height:6px; border-radius:3px; background:var(--surface-2); overflow:hidden; margin:0 16px; }
+.progress > span{ display:block; height:100%; background:var(--green); border-radius:3px; transition:width .25s; }
+.checklist{ padding:6px 8px 4px; }
+.check{ display:flex; align-items:center; gap:12px; padding:10px 8px; border-radius:10px; cursor:pointer; user-select:none; }
+.check:active{ background:var(--surface-2); }
+.box{ width:26px; height:26px; border-radius:8px; border:2px solid var(--line-strong); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .15s, border-color .15s; }
+.box svg{ width:16px; height:16px; stroke:#fff; stroke-width:3; fill:none; opacity:0; }
+.check.done .box{ background:var(--green); border-color:var(--green); }
+.check.done .box svg{ opacity:1; }
+.check.done .check-title{ color:var(--muted); text-decoration:line-through; text-decoration-color:var(--line-strong); }
+.check-title{ font-size:15.5px; font-weight:500; }
+.check-meta{ font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+.s-foot{ display:flex; align-items:center; gap:4px; padding:4px 8px 10px 8px; border-top:1px solid var(--line); margin-top:6px; }
+.s-foot .link-btn{ white-space:nowrap; color:var(--muted); font-weight:600; font-size:14px; padding:10px 8px; }
+.s-note{ margin:4px 16px 10px; padding:10px 12px; background:var(--gold-soft); border-radius:10px; font-size:14px; white-space:pre-wrap; }
+.att{ padding:2px 16px 12px; }
+.att-row{ display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); }
+.att-row:last-child{ border-bottom:none; }
+.att-name{ flex:1; font-size:15px; }
+.seg{ display:flex; background:var(--surface-2); border-radius:10px; padding:3px; gap:2px; }
+.seg button{ border:none; background:none; padding:6px 11px; border-radius:8px; font-size:13.5px; font-weight:650; color:var(--muted); }
+.seg button.on-P{ background:var(--green); color:#fff; }
+.seg button.on-A{ background:var(--accent); color:var(--accent-ink); }
+.seg button.on-G{ background:var(--gold); color:#fff; }
+.done-banner{ display:flex; align-items:center; gap:8px; color:var(--green); font-weight:650; font-size:14px; padding:2px 16px 10px; }
+
+/* ---------- CHIPS ---------- */
+.dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; display:inline-block; }
+.chips{ display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; margin:0 -16px; padding-left:16px; padding-right:16px; scrollbar-width:none; }
+.chips::-webkit-scrollbar{ display:none; }
+.chip{ border:1px solid var(--line-strong); background:var(--surface); border-radius:99px; padding:8px 14px; font-size:14px; font-weight:600; white-space:nowrap; display:inline-flex; align-items:center; gap:7px; color:var(--ink); }
+.chip.on{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.badge{ display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:650; padding:3px 9px; border-radius:99px; background:var(--surface-2); color:var(--muted); white-space:nowrap; }
+.badge.accent{ background:var(--accent-soft); color:var(--accent); }
+.badge.green{ background:var(--green-soft); color:var(--green); }
+
+/* ---------- LISTS ---------- */
+.list-item{ display:flex; align-items:center; gap:14px; padding:14px 16px; }
+.list-item + .list-item{ border-top:1px solid var(--line); }
+.avatar{ width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; color:#fff; flex-shrink:0; }
+.li-title{ font-weight:650; font-size:16px; }
+.li-meta{ color:var(--muted); font-size:13.5px; margin-top:1px; }
+.chev{ color:var(--muted); }
+.bar{ height:5px; border-radius:3px; background:var(--surface-2); overflow:hidden; margin-top:8px; max-width:220px; }
+.bar > span{ display:block; height:100%; background:var(--accent); }
+details.concluded > summary{ list-style:none; cursor:pointer; }
+details.concluded > summary::-webkit-details-marker{ display:none; }
+.dim{ opacity:.7; }
+
+/* ---------- SEGMENTED TABS ---------- */
+.tabs{ display:flex; background:var(--surface-2); border-radius:12px; padding:4px; gap:4px; margin:16px 0; }
+.tabs button{ flex:1; border:none; background:none; padding:9px 6px; border-radius:9px; font-weight:650; font-size:14.5px; color:var(--muted); }
+.tabs button.on{ background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
+
+/* ---------- EXERCISES ---------- */
+.search{ position:relative; }
+.search svg.i{ position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--muted); width:19px; height:19px; }
+div.search input{ width:100%; padding:13px 14px 13px 42px; border-radius:12px; border:1px solid var(--line-strong); background:var(--surface); }
+.ex-item{ padding:14px 16px; }
+.ex-item + .ex-item{ border-top:1px solid var(--line); }
+.ex-top{ display:flex; align-items:center; gap:10px; }
+.ex-desc{ color:var(--muted); font-size:14px; margin-top:6px; }
+.ex-desc.clamp{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.ex-mat{ font-size:13px; color:var(--muted); font-style:italic; margin-top:4px; }
+.ex-actions{ display:flex; gap:4px; justify-content:flex-end; margin-top:6px; }
+
+/* ---------- SHEET (modal) ---------- */
+.overlay{ position:fixed; inset:0; z-index:100; background:rgba(20,15,12,.45); display:flex; align-items:flex-end; justify-content:center; animation:fade .18s ease; }
+.sheet{ background:var(--bg); width:100%; max-width:600px; max-height:92vh; overflow-y:auto; border-radius:22px 22px 0 0; padding:8px 18px calc(20px + env(safe-area-inset-bottom)); animation:up .22s cubic-bezier(.2,.8,.3,1); -webkit-overflow-scrolling:touch; }
+.grab{ width:40px; height:5px; border-radius:3px; background:var(--line-strong); margin:4px auto 10px; }
+.sheet-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; }
+@media (min-width:700px){
+  .overlay{ align-items:center; padding:20px; }
+  .sheet{ border-radius:22px; padding-bottom:22px; }
+  .grab{ display:none; }
+}
+@keyframes fade{ from{opacity:0} to{opacity:1} }
+@keyframes up{ from{transform:translateY(40px); opacity:.6} to{transform:none; opacity:1} }
+@media (prefers-reduced-motion: reduce){ .overlay,.sheet{ animation:none; } }
+.field{ margin-bottom:14px; }
+.field > label{ display:block; font-size:13.5px; font-weight:650; color:var(--muted); margin:0 2px 6px; }
+.field input, .field select, .field textarea{ width:100%; padding:12px 13px; border-radius:12px; border:1px solid var(--line-strong); background:var(--surface); }
+.field textarea{ min-height:80px; resize:vertical; line-height:1.45; }
+.field-row{ display:flex; gap:10px; }
+.field-row > .field{ flex:1; min-width:0; }
+.hint{ font-size:13px; color:var(--muted); margin:6px 2px 0; }
+.sheet-actions{ display:flex; gap:10px; margin-top:20px; }
+.sheet-actions .btn{ flex:1; }
+.results{ margin-top:8px; }
+.result{ display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:10px; cursor:pointer; }
+.result:active{ background:var(--surface-2); }
+.result .plus{ width:30px; height:30px; border-radius:50%; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.picked{ background:var(--surface); border:1px solid var(--line); border-radius:12px; margin-top:10px; }
+.picked-item{ display:flex; align-items:center; gap:10px; padding:8px 6px 8px 14px; }
+.picked-item + .picked-item{ border-top:1px solid var(--line); }
+.toggle-row{ display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--surface); border:1px solid var(--line-strong); border-radius:12px; }
+.toggle-row input[type=checkbox]{ width:22px; height:22px; accent-color:var(--accent); }
+
+/* ---------- SHOW ---------- */
+.scene{ display:flex; gap:10px; padding:12px 10px 12px 14px; align-items:flex-start; }
+.scene + .scene{ border-top:1px solid var(--line); }
+.scene-n{ font-family:var(--font-display); font-weight:650; font-size:20px; color:var(--accent); width:24px; padding-top:6px; }
+.inline-input{ width:100%; border:none; background:transparent; padding:6px 0; font-weight:650; font-size:16px; border-bottom:1px dashed var(--line-strong); }
+.inline-area{ width:100%; border:none; background:transparent; padding:6px 0; font-size:14.5px; color:var(--muted); resize:vertical; min-height:36px; }
+.inline-input:focus, .inline-area:focus{ outline:none; border-bottom-color:var(--accent); }
+.cast-row{ padding:12px 14px; display:grid; grid-template-columns:1fr auto; gap:8px; }
+.cast-row + .cast-row{ border-top:1px solid var(--line); }
+.cast-row select{ padding:9px 10px; border-radius:10px; border:1px solid var(--line-strong); background:var(--surface); font-size:15px; width:100%; }
+.cast-selects{ grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.notes{ width:100%; min-height:120px; border-radius:var(--radius); border:1px solid var(--line); background:var(--surface); padding:14px 16px; font-size:15px; line-height:1.5; resize:vertical; box-shadow:var(--shadow); }
+
+/* ---------- GATES / TOAST ---------- */
+.gate{ max-width:400px; margin:40px auto; }
+.auth-msg{ font-size:14px; color:var(--accent); min-height:20px; margin-bottom:8px; }
+.auth-msg.ok{ color:var(--green); }
+.toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(var(--nav-h) + 86px + env(safe-area-inset-bottom)); z-index:200; background:var(--ink); color:var(--bg); padding:11px 18px; border-radius:12px; font-size:14.5px; font-weight:550; box-shadow:var(--shadow-lg); max-width:calc(100vw - 32px); animation:fade .2s ease; display:flex; align-items:center; gap:12px; }
+.toast button{ border:none; background:none; color:var(--gold); font-weight:700; padding:0; }
+.contact-link{ color:var(--accent); font-weight:650; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+.hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark"><svg class="i" viewBox="0 0 24 24"><path d="M4 4h16v6a8 8 0 0 1-16 0z"/><path d="M9 9h.01M15 9h.01M9.5 13a3.5 3.5 0 0 0 5 0"/></svg></span>
+      Quaderno di Regia
+    </div>
+    <div class="sync hidden" id="syncStatus"><span class="sync-dot"></span><span id="syncText">Sincronizzato</span></div>
+    <button class="round-btn" onclick="openAccountSheet()" aria-label="Account e backup">
+      <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="view"></main>
+
+<button class="fab hidden" id="fab" onclick="openSessionSheet(tab==='agenda' ? { date: agendaDate } : {})">
+  <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Incontro
+</button>
+
+<nav class="bottomnav hidden" id="bottomnav">
+  <div class="bottomnav-inner">
+    <button class="navbtn" data-tab="agenda" onclick="setTab('agenda')">
+      <svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda
+    </button>
+    <button class="navbtn" data-tab="laboratori" onclick="setTab('laboratori')">
+      <svg class="i" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>Laboratori
+    </button>
+    <button class="navbtn" data-tab="esercizi" onclick="setTab('esercizi')">
+      <svg class="i" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 1-2-2z"/><path d="M20 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2z"/></svg>Esercizi
+    </button>
+  </div>
+</nav>
+
+<input type="file" id="importFileInput" accept="application/json,.json" style="display:none" onchange="handleImportFile(this)">
+<div id="sheetRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+/* ============================================================
+   CONFIGURAZIONE FIREBASE
+   I dati restano nel tuo progetto Firebase personale ("quaderno-di-regia").
+   Se lasci vuoti apiKey e projectId l'app salva solo in questo browser.
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyAam08IZ6SEFgc35Slu3R2y-5_30Wzm1SM",
+  authDomain: "quaderno-di-regia.firebaseapp.com",
+  projectId: "quaderno-di-regia",
+  storageBucket: "quaderno-di-regia.firebasestorage.app",
+  messagingSenderId: "166927200233",
+  appId: "1:166927200233:web:28d00bf35589b6f08fa578"
+};
+
+/* ============================================================
+   STATO
+   ============================================================ */
+const STORAGE_KEY = 'quaderno-regia-state';
+let state = null;
+let tab = 'agenda';
+let agendaDate = todayISO();
+let viewingLabId = null;
+let labTab = 'incontri';
+let exFilter = { search:'', category:'tutti' };
+let openAtt = {};          // sessionId -> true se il registro presenze è aperto
+let openLabSession = {};   // sessionId -> true se espanso nella lista incontri del laboratorio
+let MODE = 'local';        // 'firebase' | 'local'
+let fbAuth = null, fbDb = null, fbUser = null;
+let lastSyncedJson = null;
+let sheetCtx = null;
+
+const CATEGORIES = [
+  { id:'riscaldamento',   label:'Riscaldamento' },
+  { id:'fiducia',         label:'Fiducia e gruppo' },
+  { id:'improvvisazione', label:'Improvvisazione' },
+  { id:'voce',            label:'Voce e respiro' },
+  { id:'movimento',       label:'Movimento e corpo' },
+  { id:'simbolico',       label:'Gioco simbolico' },
+  { id:'altro',           label:'Altro' }
+];
+function catInfo(id){ return CATEGORIES.find(c => c.id === id) || CATEGORIES[CATEGORIES.length-1]; }
+function catColor(id){ return `var(--c-${catInfo(id).id})`; }
+
+const AVATAR_COLORS = ['#B23A3A','#3A7D77','#8A4F7A','#4A6590','#C98F22','#4F7942'];
+function colorFor(name){ let h=0; for(let i=0;i<(name||'').length;i++) h=(h*31+name.charCodeAt(i))%AVATAR_COLORS.length; return AVATAR_COLORS[Math.abs(h)]; }
+function initials(name){ const p=(name||'').trim().split(/\s+/); return ((p[0]?.[0]||'')+(p[1]?.[0]||'')).toUpperCase(); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function esc(str){ return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function seedExercises(){
+  const raw = [
+    ['Il nodo umano','fiducia',15,'Il gruppo forma un cerchio, si prende per mano in modo incrociato creando un nodo, poi tutti insieme cercano di sciogliersi senza lasciarsi le mani. Allena ascolto e collaborazione.'],
+    ['Lo specchio','movimento',10,'In coppia, uno guida e l\'altro imita i movimenti come fosse uno specchio, poi si scambiano i ruoli. Lavora su attenzione e sincronia corporea.'],
+    ['Il direttore d\'orchestra','riscaldamento',8,'Un bambino alla volta dirige il gruppo con gesti e ritmi che tutti seguono. Ottimo per scaldare corpo e concentrazione a inizio incontro.'],
+    ['Storie a catena','improvvisazione',15,'Seduti in cerchio si costruisce una storia una frase a testa, senza pianificarla prima. Stimola ascolto reciproco e immaginazione condivisa.'],
+    ['Palla di energia','riscaldamento',5,'Si passa una palla immaginaria cambiando velocità, peso e direzione. Un modo veloce per portare energia e attenzione nel gruppo.'],
+    ['Il respiro del drago','voce',10,'Respirazione diaframmatica accompagnata da suoni lunghi, come il soffio di un drago. Prepara la voce senza forzare le corde vocali.'],
+    ['La macchina dei suoni','voce',12,'Ogni bambino aggiunge un suono e un movimento a una macchina immaginaria costruita insieme, uno dopo l\'altro. Unisce voce e gioco di gruppo.'],
+    ['Il mercato delle statue','simbolico',15,'I bambini si muovono nello spazio e si \'congelano\' in una statua a un segnale, poi raccontano in una parola cosa rappresentano. Lavora su immaginazione e spontaneità.']
+  ];
+  return raw.map(r => ({ id:uid(), titolo:r[0], categoria:r[1], durata:r[2], descrizione:r[3], materiali:'' }));
+}
+function newLab(nome, previsti){
+  return { id:uid(), nome, incontriPrevisti: previsti || null, numeroPartecipanti:null, concluso:null, participants:[], sessions:[], show:{ titolo:'', scene:[], cast:[], note:'' } };
+}
+function defaultState(){ return { appTitle:'I miei laboratori', labs:{}, exercises: seedExercises() }; }
+
+/* Compatibile con i dati delle versioni precedenti */
+function migrate(parsed){
+  const st = parsed && typeof parsed === 'object' ? parsed : {};
+  if(st.groups && !st.labs){
+    st.labs = st.groups; delete st.groups;
+    Object.values(st.labs).forEach(l => { if(!l.nome) l.nome = l.name || 'Laboratorio'; delete l.name; });
+  }
+  delete st.activeGroupId;
+  if(!st.labs || typeof st.labs !== 'object') st.labs = {};
+  Object.values(st.labs).forEach(lab => {
+    if(lab.incontriPrevisti === undefined) lab.incontriPrevisti = null;
+    if(lab.numeroPartecipanti === undefined) lab.numeroPartecipanti = null;
+    if(lab.concluso === undefined) lab.concluso = null;
+    if(!Array.isArray(lab.participants)) lab.participants = [];
+    lab.participants.forEach(p => { if(p.contattoNome === undefined) p.contattoNome=''; if(p.contattoTelefono === undefined) p.contattoTelefono=''; });
+    if(!Array.isArray(lab.sessions)) lab.sessions = [];
+    if(!lab.show) lab.show = { titolo:'', scene:[], cast:[], note:'' };
+    if(!Array.isArray(lab.show.scene)) lab.show.scene = [];
+    if(!Array.isArray(lab.show.cast)) lab.show.cast = [];
+    lab.sessions.forEach(s => {
+      if(!Array.isArray(s.esercizi)) s.esercizi = [];
+      if(s.esercizi.length && typeof s.esercizi[0] === 'string') s.esercizi = s.esercizi.map(id => ({ exerciseId:id, fatto:false }));
+      if(!s.presenze || typeof s.presenze !== 'object') s.presenze = {};
+      if(s.oraFine === undefined) s.oraFine = '';
+      if(s.ora === undefined) s.ora = '';
+    });
+  });
+  if(!Array.isArray(st.exercises)) st.exercises = seedExercises();
+  if(!st.appTitle) st.appTitle = 'I miei laboratori';
+  return st;
+}
+
+/* ============================================================
+   SALVATAGGIO
+   ============================================================ */
+function setSync(kind, text){
+  const el = document.getElementById('syncStatus');
+  if(MODE !== 'firebase'){ el.classList.add('hidden'); return; }
+  el.classList.remove('hidden','pending','err');
+  if(kind) el.classList.add(kind);
+  document.getElementById('syncText').textContent = text;
+}
+let pendingWrites = 0;
+function persist(){
+  const json = JSON.stringify(state);
+  lastSyncedJson = json;
+  try{ localStorage.setItem(STORAGE_KEY, json); }catch(e){}
+  if(MODE === 'firebase' && fbUser){
+    pendingWrites++;
+    setSync('pending', navigator.onLine ? 'Salvataggio…' : 'Offline, salvo dopo');
+    fbDb.collection('appdata').doc(fbUser.uid).set({ json, updatedAt: Date.now() })
+      .then(() => { pendingWrites--; if(pendingWrites <= 0){ pendingWrites = 0; setSync('', 'Sincronizzato'); } })
+      .catch(e => { pendingWrites--; console.error(e); setSync('err', 'Errore di salvataggio'); toast('Non riesco a salvare online. Esporta un backup per sicurezza.'); });
+  }
+}
+window.addEventListener('online', () => { if(MODE==='firebase' && pendingWrites>0) setSync('pending','Salvataggio…'); });
+window.addEventListener('offline', () => { if(MODE==='firebase') setSync('pending','Offline'); });
+
+function loadLocal(){
+  try{ const raw = localStorage.getItem(STORAGE_KEY); state = raw ? migrate(JSON.parse(raw)) : defaultState(); }
+  catch(e){ state = defaultState(); }
+  lastSyncedJson = JSON.stringify(state);
+}
+async function loadFromFirestore(){
+  try{
+    const snap = await fbDb.collection('appdata').doc(fbUser.uid).get();
+    if(snap.exists && snap.data() && snap.data().json){
+      state = migrate(JSON.parse(snap.data().json));
+      lastSyncedJson = JSON.stringify(state);
+    }else{
+      loadLocal();
+      persist();
+    }
+    return true;
+  }catch(e){
+    console.error(e);
+    if(e && e.code === 'permission-denied'){ renderDeniedGate(); return false; }
+    loadLocal();
+    toast('Non riesco a leggere i dati online: ti mostro la copia salvata su questo dispositivo.');
+    return true;
+  }
+}
+function listenFirestore(){
+  fbDb.collection('appdata').doc(fbUser.uid).onSnapshot(snap => {
+    if(!snap.exists) return;
+    const d = snap.data();
+    if(!d || !d.json || d.json === lastSyncedJson) return;
+    if(snap.metadata.hasPendingWrites) return;
+    try{
+      lastSyncedJson = d.json;
+      state = migrate(JSON.parse(d.json));
+      try{ localStorage.setItem(STORAGE_KEY, d.json); }catch(e){}
+      if(!document.querySelector('.overlay')) render();
+    }catch(e){ console.error(e); }
+  }, err => console.error(err));
+}
+
+async function init(){
+  if(firebaseConfig.apiKey && firebaseConfig.projectId && window.firebase){
+    MODE = 'firebase';
+    try{
+      firebase.initializeApp(firebaseConfig);
+      fbAuth = firebase.auth();
+      fbDb = firebase.firestore();
+      try{ await fbDb.enablePersistence({ synchronizeTabs:true }); }catch(e){ /* non supportato: pazienza */ }
+      renderLoading();
+      fbAuth.onAuthStateChanged(async user => {
+        if(user){
+          fbUser = user;
+          renderLoading();
+          const ok = await loadFromFirestore();
+          if(ok){ setSync('', 'Sincronizzato'); listenFirestore(); showChrome(true); render(); }
+        }else{
+          fbUser = null; state = null; showChrome(false); renderLoginGate();
+        }
+      });
+      return;
+    }catch(e){
+      console.error(e);
+      MODE = 'local';
+    }
+  }
+  MODE = 'local';
+  loadLocal();
+  showChrome(true);
+  render();
+}
+
+/* ============================================================
+   UTILITÀ DATE
+   ============================================================ */
+function isoOf(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function todayISO(){ return isoOf(new Date()); }
+function dateOf(iso){ return new Date(iso + 'T00:00:00'); }
+function addDays(iso, n){ const d = dateOf(iso); d.setDate(d.getDate()+n); return isoOf(d); }
+function fmtLong(iso){ const s = dateOf(iso).toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long' }); return s.charAt(0).toUpperCase()+s.slice(1); }
+function fmtShort(iso){ return dateOf(iso).toLocaleDateString('it-IT', { weekday:'short', day:'numeric', month:'short' }); }
+function relDay(iso){
+  const t = todayISO();
+  if(iso === t) return 'Oggi';
+  if(iso === addDays(t,1)) return 'Domani';
+  if(iso === addDays(t,-1)) return 'Ieri';
+  return fmtLong(iso);
+}
+function mondayOf(iso){ const d = dateOf(iso); const wd = (d.getDay()+6)%7; d.setDate(d.getDate()-wd); return isoOf(d); }
+
+/* ============================================================
+   LOGICA LABORATORI / INCONTRI
+   ============================================================ */
+function sortedSessions(lab){ return lab.sessions.slice().sort((a,b) => (a.date+(a.ora||'')).localeCompare(b.date+(b.ora||''))); }
+function sessionNumber(lab, s){ return sortedSessions(lab).findIndex(x => x.id === s.id) + 1; }
+function sessionTitle(lab, s){
+  if(s.titolo) return s.titolo;
+  const n = sessionNumber(lab, s);
+  return `Incontro ${n}${lab.incontriPrevisti ? ' di ' + lab.incontriPrevisti : ''}`;
+}
+function isConcluded(lab){
+  if(lab.concluso === true) return true;
+  if(lab.concluso === false) return false;
+  if(!lab.incontriPrevisti) return false;
+  if(lab.sessions.length < lab.incontriPrevisti) return false;
+  const t = todayISO();
+  return lab.sessions.every(s => s.date < t);
+}
+function nextSession(lab){ const t = todayISO(); return sortedSessions(lab).find(s => s.date >= t) || null; }
+function sessionsOn(date){
+  const out = [];
+  Object.values(state.labs).forEach(lab => lab.sessions.forEach(s => { if(s.date === date) out.push({ lab, s }); }));
+  return out.sort((a,b) => (a.s.ora||'99').localeCompare(b.s.ora||'99'));
+}
+function findSession(id){
+  for(const lab of Object.values(state.labs)){ const s = lab.sessions.find(x => x.id === id); if(s) return { lab, s }; }
+  return null;
+}
+function participantsLabel(lab){
+  if(lab.numeroPartecipanti) return `${lab.numeroPartecipanti} partecipanti`;
+  if(lab.participants.length) return `${lab.participants.length} con note`;
+  return 'partecipanti da definire';
+}
+
+/* ============================================================
+   NAVIGAZIONE / RENDER
+   ============================================================ */
+function showChrome(on){
+  document.getElementById('bottomnav').classList.toggle('hidden', !on);
+  updateFab(on);
+}
+function updateFab(on){
+  const show = on !== false && state && (tab === 'agenda' || (tab === 'laboratori' && viewingLabId && labTab === 'incontri'));
+  document.getElementById('fab').classList.toggle('hidden', !show);
+}
+function setTab(t){
+  if(!state) return;
+  if(t === tab && t === 'laboratori') viewingLabId = null;
+  if(t === 'agenda' && tab === 'agenda') agendaDate = todayISO();
+  tab = t;
+  window.scrollTo(0,0);
+  render();
+}
+function render(){
+  if(!state) return;
+  document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  if(tab === 'agenda') renderAgenda();
+  else if(tab === 'laboratori'){ if(viewingLabId && state.labs[viewingLabId]) renderLab(); else { viewingLabId = null; renderLabs(); } }
+  else renderExercises();
+  updateFab();
+}
+const V = () => document.getElementById('view');
+
+/* ---------- ICONE ---------- */
+const I = {
+  plus:'<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  left:'<svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
+  right:'<svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
+  down:'<svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  up:'<svg class="i" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>',
+  edit:'<svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+  trash:'<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+  x:'<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>',
+  people:'<svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20c0-3-1.8-5.2-4.5-5.8"/></svg>',
+  cal:'<svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  book:'<svg class="i" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 1-2-2z"/><path d="M20 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2z"/></svg>',
+  search:'<svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+  phone:'<svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
+  layers:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
+  done:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>'
+};
+
+/* ============================================================
+   AGENDA
+   ============================================================ */
+function renderAgenda(){
+  const mon = mondayOf(agendaDate);
+  const days = Array.from({length:7}, (_,i) => addDays(mon, i));
+  const t = todayISO();
+  const busy = new Set();
+  Object.values(state.labs).forEach(l => l.sessions.forEach(s => busy.add(s.date)));
+  const monthLabel = dateOf(agendaDate).toLocaleDateString('it-IT', { month:'long', year:'numeric' });
+  const items = sessionsOn(agendaDate);
+
+  let body;
+  if(items.length){
+    body = `<div class="stack">${items.map(it => sessionCard(it.lab, it.s, { showLab:true })).join('')}</div>`;
+  }else{
+    const upcoming = [];
+    Object.values(state.labs).forEach(lab => lab.sessions.forEach(s => { if(s.date > agendaDate) upcoming.push({ lab, s }); }));
+    upcoming.sort((a,b) => (a.s.date+(a.s.ora||'')).localeCompare(b.s.date+(b.s.ora||'')));
+    body = `<div class="card empty">
+        ${I.cal}
+        <p>${agendaDate === t ? 'Oggi niente incontri.' : 'Nessun incontro in questo giorno.'}</p>
+        <button class="btn" onclick="openSessionSheet({ date: agendaDate })">${I.plus}Aggiungi un incontro</button>
+      </div>
+      ${upcoming.length ? `<div class="section-label">Prossimi incontri</div>
+        <div class="card">${upcoming.slice(0,4).map(it => `
+          <div class="list-item tap" onclick="agendaDate='${it.s.date}'; render(); window.scrollTo(0,0);">
+            <div class="grow">
+              <div class="li-title">${esc(sessionTitle(it.lab, it.s))}</div>
+              <div class="li-meta">${esc(it.lab.nome)} · ${esc(fmtShort(it.s.date))}${it.s.ora ? ' · ' + it.s.ora : ''}</div>
+            </div>
+            <span class="chev">${I.right}</span>
+          </div>`).join('')}</div>` : ''}`;
+  }
+
+  V().innerHTML = `
+    <div class="week-head">
+      <button class="icon-btn" onclick="agendaDate=addDays(agendaDate,-7); render();" aria-label="Settimana precedente">${I.left}</button>
+      <div class="row" style="gap:8px">
+        <span class="week-month">${esc(monthLabel)}</span>
+        ${agendaDate !== t ? `<button class="btn secondary small" onclick="agendaDate=todayISO(); render();">Oggi</button>` : ''}
+      </div>
+      <button class="icon-btn" onclick="agendaDate=addDays(agendaDate,7); render();" aria-label="Settimana successiva">${I.right}</button>
+    </div>
+    <div class="week">
+      ${days.map(d => `<button class="day ${d===agendaDate?'sel':''} ${d===t?'today':''} ${busy.has(d)?'has':''}" onclick="agendaDate='${d}'; render();">
+        <span class="day-name">${dateOf(d).toLocaleDateString('it-IT',{weekday:'short'}).slice(0,3)}</span>
+        <span class="day-num">${dateOf(d).getDate()}</span>
+        <span class="day-dot"></span>
+      </button>`).join('')}
+    </div>
+    <div class="day-title">
+      <h1 class="h1">${esc(relDay(agendaDate))}</h1>
+      ${relDay(agendaDate) !== fmtLong(agendaDate) ? `<span class="sub">${esc(fmtLong(agendaDate))}</span>` : ''}
+    </div>
+    ${body}`;
+}
+
+/* ---------- CARD INCONTRO (Agenda e Laboratorio) ---------- */
+function sessionCard(lab, s, opts){
+  opts = opts || {};
+  const items = s.esercizi.map(e => ({ ...e, ex: state.exercises.find(x => x.id === e.exerciseId) })).filter(e => e.ex);
+  const done = items.filter(e => e.fatto).length;
+  const total = items.length;
+  const minutes = items.reduce((a,e) => a + (Number(e.ex.durata)||0), 0);
+  const pct = total ? Math.round(done/total*100) : 0;
+  const attOpen = !!openAtt[s.id];
+  const rec = Object.values(s.presenze);
+  const pres = rec.filter(v => v === 'presente').length;
+
+  return `<div class="card s-card">
+    <div class="s-head">
+      <div class="s-time">
+        <div class="t1">${s.ora || '—'}</div>
+        ${s.oraFine ? `<div class="t2">${s.oraFine}</div>` : ''}
+      </div>
+      <div class="grow">
+        ${opts.showLab ? `<div class="s-lab">${esc(lab.nome)}</div>` : `<div class="s-lab" style="color:var(--muted)">${esc(fmtShort(s.date))}</div>`}
+        <div class="s-title">${esc(sessionTitle(lab, s))}</div>
+        <div class="s-meta">${total ? `${done} di ${total} esercizi fatti · ${minutes} min` : 'Nessun esercizio in programma'}</div>
+      </div>
+    </div>
+    ${total ? `<div class="progress"><span style="width:${pct}%"></span></div>` : ''}
+    ${total && done === total ? `<div class="done-banner" style="margin-top:10px">${I.done}Tutti gli esercizi fatti</div>` : ''}
+    ${s.note ? `<div class="s-note" style="margin-top:12px">${esc(s.note)}</div>` : ''}
+    ${total ? `<div class="checklist">${items.map(e => `
+      <div class="check ${e.fatto ? 'done' : ''}" onclick="toggleDone('${lab.id}','${s.id}','${e.exerciseId}')" role="checkbox" aria-checked="${e.fatto}">
+        <span class="box">${I.check}</span>
+        <div class="grow">
+          <div class="check-title">${esc(e.ex.titolo)}</div>
+          <div class="check-meta"><span class="dot" style="background:${catColor(e.ex.categoria)}"></span>${esc(catInfo(e.ex.categoria).label)} · ${e.ex.durata} min</div>
+        </div>
+      </div>`).join('')}</div>` : ''}
+    ${attOpen ? attendanceBlock(lab, s) : ''}
+    <div class="s-foot">
+      <button class="link-btn" onclick="openSessionSheet({ editId:'${s.id}' })">${I.edit}Modifica</button>
+      ${lab.participants.length ? `<button class="link-btn" onclick="openAtt['${s.id}']=!openAtt['${s.id}']; render();">${I.people}Presenze${rec.length ? ` ${pres}/${lab.participants.length}` : ''}</button>` : ''}
+      <span class="grow"></span>
+      ${opts.showLab ? `<button class="link-btn" onclick="goLab('${lab.id}')">Laboratorio${I.right}</button>` : ''}
+    </div>
+  </div>`;
+}
+function attendanceBlock(lab, s){
+  return `<div class="att">${lab.participants.map(p => {
+    const st = s.presenze[p.id];
+    return `<div class="att-row">
+      <span class="att-name">${esc(p.name)}</span>
+      <div class="seg">
+        <button class="${st==='presente'?'on-P':''}" onclick="setAtt('${lab.id}','${s.id}','${p.id}','presente')">P</button>
+        <button class="${st==='assente'?'on-A':''}" onclick="setAtt('${lab.id}','${s.id}','${p.id}','assente')">A</button>
+        <button class="${st==='giustificato'?'on-G':''}" onclick="setAtt('${lab.id}','${s.id}','${p.id}','giustificato')">G</button>
+      </div>
+    </div>`; }).join('')}</div>`;
+}
+function toggleDone(labId, sid, exId){
+  const s = state.labs[labId].sessions.find(x => x.id === sid);
+  const it = s.esercizi.find(e => e.exerciseId === exId);
+  if(it) it.fatto = !it.fatto;
+  persist(); render();
+}
+function setAtt(labId, sid, pid, val){
+  const s = state.labs[labId].sessions.find(x => x.id === sid);
+  if(s.presenze[pid] === val) delete s.presenze[pid]; else s.presenze[pid] = val;
+  persist(); render();
+}
+function goLab(labId){ tab = 'laboratori'; viewingLabId = labId; labTab = 'incontri'; window.scrollTo(0,0); render(); }
+
+/* ============================================================
+   SHEET GENERICO
+   ============================================================ */
+function openSheet(html){
+  document.getElementById('sheetRoot').innerHTML = `<div class="overlay" onmousedown="if(event.target===this) closeSheet()"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div></div>`;
+  document.addEventListener('keydown', escClose);
+}
+function escClose(e){ if(e.key === 'Escape') closeSheet(); }
+function closeSheet(){ document.getElementById('sheetRoot').innerHTML = ''; document.removeEventListener('keydown', escClose); sheetCtx = null; render(); }
+function sheetHead(title){ return `<div class="sheet-head"><h2 class="h2">${esc(title)}</h2><button class="icon-btn" onclick="closeSheet()" aria-label="Chiudi">${I.x}</button></div>`; }
+function confirmSheet(title, text, btnLabel, fnName, ...args){
+  openSheet(`${sheetHead(title)}<p class="sub" style="font-size:15px">${esc(text)}</p>
+    <div class="sheet-actions"><button class="btn secondary" onclick="closeSheet()">Annulla</button>
+    <button class="btn" onclick="${fnName}(${args.map(a => `'${a}'`).join(',')}); closeSheet();">${esc(btnLabel)}</button></div>`);
+}
+
+/* ============================================================
+   SHEET INCONTRO (nuovo / modifica)
+   ============================================================ */
+function openSessionSheet(o){
+  o = o || {};
+  let lab = null, s = null;
+  if(o.editId){ const f = findSession(o.editId); if(f){ lab = f.lab; s = f.s; } }
+  else if(o.labId) lab = state.labs[o.labId];
+  if(!o.editId && !o.labId && tab === 'laboratori' && viewingLabId) lab = state.labs[viewingLabId];
+  const activeLabs = Object.values(state.labs).filter(l => !isConcluded(l)).sort((a,b) => a.nome.localeCompare(b.nome));
+  sheetCtx = { editId: s ? s.id : null, labId: lab ? lab.id : null, picked: s ? s.esercizi.map(e => e.exerciseId).filter(id => state.exercises.some(x => x.id === id)) : [] };
+  const date = s ? s.date : (o.date || todayISO());
+
+  // proposta orario: stesso orario dell'ultimo incontro del laboratorio
+  let defOra = '', defFine = '';
+  if(!s && lab && lab.sessions.length){ const last = sortedSessions(lab).slice(-1)[0]; defOra = last.ora || ''; defFine = last.oraFine || ''; }
+
+  openSheet(`${sheetHead(s ? 'Modifica incontro' : 'Nuovo incontro')}
+    <form onsubmit="submitSession(event)" autocomplete="off">
+      ${lab && (s || o.labId || viewingLabId) ? `<div class="field"><label>Laboratorio</label><div style="font-weight:650;font-size:17px;padding:2px 2px 0">${esc(lab.nome)}</div></div>` : `
+        <div class="field"><label>Laboratorio</label>
+          <select id="fLab" onchange="onLabPick(this.value)">
+            ${activeLabs.map(l => `<option value="${l.id}">${esc(l.nome)}</option>`).join('')}
+            <option value="__new__" ${activeLabs.length ? '' : 'selected'}>+ Nuovo laboratorio</option>
+          </select>
+        </div>
+        <div id="newLabBox" class="${activeLabs.length ? 'hidden' : ''}">
+          <div class="field-row">
+            <div class="field" style="flex:2"><label>Nome del nuovo laboratorio</label><input id="fNewLab" placeholder="Es. Scuola Rodari, giovedì"></div>
+            <div class="field"><label>Incontri totali</label><input id="fNewLabN" type="number" inputmode="numeric" min="1" max="60" placeholder="Es. 5"></div>
+          </div>
+        </div>`}
+      <div class="field"><label>Giorno</label><input id="fDate" type="date" required value="${date}"></div>
+      <div class="field-row">
+        <div class="field"><label>Inizio</label><input id="fOra" type="time" value="${s ? (s.ora||'') : defOra}"></div>
+        <div class="field"><label>Fine</label><input id="fOraFine" type="time" value="${s ? (s.oraFine||'') : defFine}"></div>
+      </div>
+      ${!s ? `<div class="field">
+        <label class="toggle-row" style="font-size:15px;color:var(--ink);font-weight:500;margin:0">
+          <input type="checkbox" id="fRepeat" onchange="document.getElementById('repeatBox').classList.toggle('hidden', !this.checked)">
+          Ripeti ogni settimana
+        </label>
+        <div id="repeatBox" class="hidden" style="margin-top:10px">
+          <div class="row"><span class="grow sub" style="font-size:15px">Quanti incontri in tutto?</span>
+          <input id="fRepeatN" type="number" inputmode="numeric" min="2" max="40" value="5" style="width:90px;padding:10px 12px;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface)"></div>
+          <p class="hint">Creo gli incontri nello stesso giorno della settimana e allo stesso orario. Gli esercizi qui sotto vanno solo nel primo.</p>
+        </div>
+      </div>` : ''}
+      <div class="field"><label>Esercizi da fare</label>
+        <div class="search">${I.search}<input id="fExSearch" placeholder="Cerca e aggiungi un esercizio" oninput="renderExResults()" autocomplete="off"></div>
+        <div id="exResults" class="results"></div>
+        <div id="exPicked"></div>
+      </div>
+      <div class="field"><label>Titolo (facoltativo)</label><input id="fTitolo" value="${s ? esc(s.titolo||'') : ''}" placeholder="Se lo lasci vuoto: “Incontro 1”, “Incontro 2”…"></div>
+      <div class="field"><label>Note (facoltativo)</label><textarea id="fNote" placeholder="Materiali da portare, cose da ricordare…">${s ? esc(s.note||'') : ''}</textarea></div>
+      <div class="sheet-actions">
+        ${s ? `<button type="button" class="btn danger" style="flex:0 0 auto" onclick="confirmSheet('Eliminare l\\'incontro?','Spariscono anche checklist e presenze di questo incontro.','Elimina','deleteSession','${lab.id}','${s.id}')">${I.trash}</button>` : ''}
+        <button type="submit" class="btn">${s ? 'Salva' : 'Crea incontro'}</button>
+      </div>
+    </form>`);
+  renderPicked();
+}
+function onLabPick(v){ document.getElementById('newLabBox').classList.toggle('hidden', v !== '__new__'); }
+function renderExResults(){
+  const box = document.getElementById('exResults'); if(!box) return;
+  const raw = document.getElementById('fExSearch').value.trim();
+  const t = raw.toLowerCase();
+  if(!t){ box.innerHTML = ''; return; }
+  const m = state.exercises.filter(ex => !sheetCtx.picked.includes(ex.id) &&
+    (ex.titolo.toLowerCase().includes(t) || catInfo(ex.categoria).label.toLowerCase().includes(t) || (ex.descrizione||'').toLowerCase().includes(t))).slice(0,6);
+  const exact = state.exercises.some(ex => ex.titolo.toLowerCase() === t);
+  box.innerHTML = m.map(ex => `<div class="result" onclick="pickEx('${ex.id}')">
+      <span class="plus">${I.plus}</span>
+      <div class="grow"><div style="font-weight:600">${esc(ex.titolo)}</div>
+      <div class="check-meta"><span class="dot" style="background:${catColor(ex.categoria)}"></span>${esc(catInfo(ex.categoria).label)} · ${ex.durata} min</div></div>
+    </div>`).join('') + (exact ? '' : `<div class="result" onclick="quickCreateEx()">
+      <span class="plus" style="background:var(--surface-2);color:var(--ink)">${I.plus}</span>
+      <div class="grow"><div style="font-weight:600">Crea “${esc(raw)}”</div><div class="check-meta">Nuovo esercizio nella libreria</div></div>
+    </div>`);
+}
+function pickEx(id){
+  sheetCtx.picked.push(id);
+  const inp = document.getElementById('fExSearch'); inp.value = ''; renderExResults(); renderPicked(); inp.focus();
+}
+function quickCreateEx(){
+  const inp = document.getElementById('fExSearch');
+  const titolo = inp.value.trim(); if(!titolo) return;
+  const ex = { id:uid(), titolo, categoria:'altro', durata:10, descrizione:'', materiali:'' };
+  state.exercises.push(ex);
+  persist();
+  pickEx(ex.id);
+  toast('Esercizio aggiunto alla libreria: puoi completarlo dopo');
+}
+function unpickEx(id){ sheetCtx.picked = sheetCtx.picked.filter(x => x !== id); renderPicked(); renderExResults(); }
+function moveEx(id, dir){
+  const a = sheetCtx.picked; const i = a.indexOf(id); const j = i + dir;
+  if(j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; renderPicked();
+}
+function renderPicked(){
+  const el = document.getElementById('exPicked'); if(!el) return;
+  const list = sheetCtx.picked.map(id => state.exercises.find(e => e.id === id)).filter(Boolean);
+  if(!list.length){ el.innerHTML = `<p class="hint">Nessun esercizio ancora. Scrivi nella ricerca, per esempio “voce” o “specchio”.</p>`; return; }
+  const mins = list.reduce((a,e) => a + (Number(e.durata)||0), 0);
+  el.innerHTML = `<div class="picked">${list.map((ex,i) => `<div class="picked-item">
+      <span class="dot" style="background:${catColor(ex.categoria)}"></span>
+      <div class="grow"><div style="font-weight:600;font-size:15px">${esc(ex.titolo)}</div><div class="check-meta">${ex.durata} min</div></div>
+      ${list.length > 1 ? `<button type="button" class="icon-btn" onclick="moveEx('${ex.id}',-1)" ${i===0?'disabled style="opacity:.3"':''} aria-label="Sposta su">${I.up}</button>` : ''}
+      <button type="button" class="icon-btn" onclick="unpickEx('${ex.id}')" aria-label="Togli">${I.x}</button>
+    </div>`).join('')}</div><p class="hint">${list.length} esercizi · circa ${mins} minuti</p>`;
+}
+function submitSession(e){
+  e.preventDefault();
+  const date = document.getElementById('fDate').value; if(!date) return;
+  const ora = document.getElementById('fOra').value;
+  const oraFine = document.getElementById('fOraFine').value;
+  const titolo = document.getElementById('fTitolo').value.trim();
+  const note = document.getElementById('fNote').value.trim();
+  let labId = sheetCtx.labId;
+  if(!labId){
+    const sel = document.getElementById('fLab').value;
+    if(sel === '__new__'){
+      const nEl = document.getElementById('fNewLab'); const nome = nEl.value.trim();
+      if(!nome){ nEl.focus(); toast('Dai un nome al laboratorio'); return; }
+      const nRaw = document.getElementById('fNewLabN').value;
+      const lab = newLab(nome, nRaw ? Number(nRaw) : null);
+      state.labs[lab.id] = lab; labId = lab.id;
+    }else labId = sel;
+  }
+  const lab = state.labs[labId];
+  if(sheetCtx.editId){
+    const s = lab.sessions.find(x => x.id === sheetCtx.editId);
+    const prev = {}; s.esercizi.forEach(x => prev[x.exerciseId] = x.fatto);
+    Object.assign(s, { date, ora, oraFine, titolo, note, esercizi: sheetCtx.picked.map(id => ({ exerciseId:id, fatto: !!prev[id] })) });
+  }else{
+    const rep = document.getElementById('fRepeat')?.checked;
+    const n = rep ? Math.max(1, Math.min(40, Number(document.getElementById('fRepeatN').value) || 1)) : 1;
+    for(let k=0; k<n; k++){
+      lab.sessions.push({ id:uid(), date: addDays(date, 7*k), ora, oraFine, titolo: k===0 ? titolo : '', note: k===0 ? note : '',
+        esercizi: k===0 ? sheetCtx.picked.map(id => ({ exerciseId:id, fatto:false })) : [], presenze:{} });
+    }
+    if(rep && !lab.incontriPrevisti) lab.incontriPrevisti = lab.sessions.length;
+    if(n > 1) toast(`Creati ${n} incontri`);
+  }
+  persist();
+  if(tab === 'agenda') agendaDate = date;
+  closeSheet();
+}
+function deleteSession(labId, sid){
+  const lab = state.labs[labId]; if(!lab) return;
+  lab.sessions = lab.sessions.filter(s => s.id !== sid);
+  persist(); toast('Incontro eliminato');
+}
+
+/* ============================================================
+   LABORATORI
+   ============================================================ */
+function labRow(lab, concluded){
+  const total = lab.incontriPrevisti || 0;
+  const t = todayISO();
+  const doneN = lab.sessions.filter(s => s.date < t).length;
+  const nx = nextSession(lab);
+  const pct = total ? Math.min(100, Math.round(doneN/total*100)) : 0;
+  const meta = [];
+  if(nx) meta.push(`Prossimo: ${relDay(nx.date).toLowerCase() === 'oggi' ? 'oggi' : fmtShort(nx.date)}${nx.ora ? ' ' + nx.ora : ''}`);
+  else if(!concluded) meta.push('Nessun incontro in programma');
+  meta.push(participantsLabel(lab));
+  return `<div class="list-item tap ${concluded ? 'dim' : ''}" onclick="goLab('${lab.id}')">
+    <div class="avatar" style="background:${colorFor(lab.nome)}">${esc(initials(lab.nome))}</div>
+    <div class="grow">
+      <div class="li-title">${esc(lab.nome)}</div>
+      <div class="li-meta">${esc(meta.join(' · '))}</div>
+      ${total && !concluded ? `<div class="row" style="gap:10px"><div class="bar grow"><span style="width:${pct}%"></span></div><span class="li-meta" style="margin-top:8px">${Math.min(doneN,total)}/${total}</span></div>` : ''}
+    </div>
+    <span class="chev">${I.right}</span>
+  </div>`;
+}
+function renderLabs(){
+  const all = Object.values(state.labs);
+  const active = all.filter(l => !isConcluded(l)).sort((a,b) => {
+    const na = nextSession(a), nb = nextSession(b);
+    return (na ? na.date : '9999').localeCompare(nb ? nb.date : '9999');
+  });
+  const concl = all.filter(isConcluded).sort((a,b) => b.nome.localeCompare(a.nome));
+  V().innerHTML = `
+    <div class="row" style="justify-content:space-between;margin-bottom:14px">
+      <h1 class="h1">Laboratori</h1>
+      <button class="btn small" onclick="openLabSheet()">${I.plus}Nuovo</button>
+    </div>
+    ${all.length === 0 ? `<div class="card empty">${I.layers}<p>Ancora nessun laboratorio. Crealo qui oppure direttamente quando aggiungi un incontro in Agenda.</p>
+      <button class="btn" onclick="openLabSheet()">${I.plus}Nuovo laboratorio</button></div>` : `
+      <div class="section-label" style="margin-top:6px">In corso · ${active.length}</div>
+      ${active.length ? `<div class="card">${active.map(l => labRow(l,false)).join('')}</div>` : `<div class="card empty" style="padding:22px"><p style="margin:0">Nessun laboratorio in corso.</p></div>`}
+      ${concl.length ? `<details class="concluded">
+        <summary class="section-label">Conclusi · ${concl.length} <span class="link-btn" style="text-transform:none;letter-spacing:0">Mostra</span></summary>
+        <div class="card">${concl.map(l => labRow(l,true)).join('')}</div>
+      </details>` : ''}`}`;
+}
+function renderLab(){
+  const lab = state.labs[viewingLabId];
+  const concl = isConcluded(lab);
+  const total = lab.incontriPrevisti;
+  const t = todayISO();
+  const doneN = lab.sessions.filter(s => s.date < t).length;
+  V().innerHTML = `
+    <button class="link-btn" style="margin-left:-6px" onclick="viewingLabId=null; render();">${I.left}Laboratori</button>
+    <div class="row" style="align-items:flex-start;margin-top:4px">
+      <div class="grow">
+        <h1 class="h1">${esc(lab.nome)}</h1>
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">
+          ${concl ? `<span class="badge">Concluso</span>` : `<span class="badge accent">In corso</span>`}
+          <span class="badge">${total ? `${Math.min(doneN,total)} di ${total} incontri svolti` : `${lab.sessions.length} incontri`}</span>
+          <span class="badge">${esc(participantsLabel(lab))}</span>
+        </div>
+      </div>
+      <button class="icon-btn" onclick="openLabSheet('${lab.id}')" aria-label="Modifica laboratorio">${I.edit}</button>
+    </div>
+    <div class="tabs">
+      <button class="${labTab==='incontri'?'on':''}" onclick="labTab='incontri'; render();">Incontri</button>
+      <button class="${labTab==='partecipanti'?'on':''}" onclick="labTab='partecipanti'; render();">Partecipanti</button>
+      <button class="${labTab==='spettacolo'?'on':''}" onclick="labTab='spettacolo'; render();">Spettacolo</button>
+    </div>
+    <div id="labBody">${labTab === 'incontri' ? labSessionsHTML(lab) : labTab === 'partecipanti' ? labPeopleHTML(lab) : labShowHTML(lab)}</div>`;
+}
+function labSessionsHTML(lab){
+  if(!lab.sessions.length) return `<div class="card empty">${I.cal}<p>Nessun incontro ancora. Puoi crearli tutti insieme con “Ripeti ogni settimana”.</p>
+    <button class="btn" onclick="openSessionSheet({ labId:'${lab.id}' })">${I.plus}Aggiungi incontri</button></div>`;
+  const t = todayISO();
+  const list = sortedSessions(lab);
+  const up = list.filter(s => s.date >= t), past = list.filter(s => s.date < t).reverse();
+  const compact = s => {
+    const items = s.esercizi.filter(e => state.exercises.some(x => x.id === e.exerciseId));
+    const d = items.filter(e => e.fatto).length;
+    return `<div class="list-item tap" onclick="openLabSession['${s.id}']=!openLabSession['${s.id}']; render();">
+      <div style="min-width:46px;text-align:center"><div style="font-weight:700;font-size:19px;line-height:1">${dateOf(s.date).getDate()}</div><div class="li-meta" style="text-transform:uppercase;font-size:11.5px;font-weight:650">${dateOf(s.date).toLocaleDateString('it-IT',{month:'short'}).replace('.','')}</div></div>
+      <div class="grow"><div class="li-title">${esc(sessionTitle(lab, s))}</div>
+        <div class="li-meta">${esc(dateOf(s.date).toLocaleDateString('it-IT',{weekday:'long'}))}${s.ora ? ' · ' + s.ora + (s.oraFine ? '–' + s.oraFine : '') : ''}${items.length ? ` · ${d}/${items.length} esercizi` : ''}</div></div>
+      ${items.length && d === items.length ? `<span class="badge green">Fatto</span>` : ''}
+      <span class="chev">${openLabSession[s.id] ? I.up : I.down}</span>
+    </div>${openLabSession[s.id] ? `<div style="padding:0 10px 12px">${sessionCard(lab, s, {})}</div>` : ''}`;
+  };
+  return `
+    ${up.length ? `<div class="section-label" style="margin-top:4px">In programma · ${up.length}</div><div class="card">${up.map(compact).join('')}</div>` : ''}
+    ${past.length ? `<div class="section-label">Già svolti · ${past.length}</div><div class="card">${past.map(compact).join('')}</div>` : ''}`;
+}
+function openLabSheet(labId){
+  const lab = labId ? state.labs[labId] : null;
+  const concl = lab ? isConcluded(lab) : false;
+  openSheet(`${sheetHead(lab ? 'Modifica laboratorio' : 'Nuovo laboratorio')}
+    <form onsubmit="submitLab(event, ${lab ? `'${lab.id}'` : 'null'})">
+      <div class="field"><label>Nome</label><input id="lNome" required value="${lab ? esc(lab.nome) : ''}" placeholder="Es. Scuola Rodari, giovedì"></div>
+      <div class="field-row">
+        <div class="field"><label>Incontri totali</label><input id="lN" type="number" inputmode="numeric" min="1" max="60" value="${lab?.incontriPrevisti ?? ''}" placeholder="Es. 5"></div>
+        <div class="field"><label>Partecipanti</label><input id="lP" type="number" inputmode="numeric" min="0" max="999" value="${lab?.numeroPartecipanti ?? ''}" placeholder="Es. 12"></div>
+      </div>
+      <p class="hint" style="margin-top:-6px">Puoi lasciarli vuoti e completarli quando li sai.</p>
+      <div class="sheet-actions">
+        ${lab ? `<button type="button" class="btn danger" style="flex:0 0 auto" onclick="confirmSheet('Eliminare il laboratorio?','Si cancellano tutti i suoi incontri, partecipanti e lo spettacolo. Non si può annullare.','Elimina','deleteLab','${lab.id}')">${I.trash}</button>` : ''}
+        <button type="submit" class="btn">${lab ? 'Salva' : 'Crea laboratorio'}</button>
+      </div>
+      ${lab ? `<button type="button" class="btn ghost block" style="margin-top:10px" onclick="toggleConcluded('${lab.id}')">${concl ? 'Riapri il laboratorio' : 'Segna come concluso'}</button>` : ''}
+    </form>`);
+  if(!lab) setTimeout(() => document.getElementById('lNome')?.focus(), 80);
+}
+function submitLab(e, labId){
+  e.preventDefault();
+  const nome = document.getElementById('lNome').value.trim(); if(!nome) return;
+  const n = document.getElementById('lN').value, p = document.getElementById('lP').value;
+  let lab;
+  if(labId){ lab = state.labs[labId]; lab.nome = nome; }
+  else { lab = newLab(nome, null); state.labs[lab.id] = lab; viewingLabId = lab.id; labTab = 'incontri'; tab = 'laboratori'; }
+  lab.incontriPrevisti = n ? Number(n) : null;
+  lab.numeroPartecipanti = p ? Number(p) : null;
+  persist(); closeSheet();
+}
+function toggleConcluded(labId){
+  const lab = state.labs[labId];
+  lab.concluso = isConcluded(lab) ? false : true;
+  persist(); closeSheet();
+}
+function deleteLab(labId){ delete state.labs[labId]; if(viewingLabId === labId) viewingLabId = null; persist(); toast('Laboratorio eliminato'); }
+
+/* ---------- PARTECIPANTI ---------- */
+function attRate(lab, p){
+  let tot=0, pr=0; lab.sessions.forEach(s => { const v = s.presenze[p.id]; if(v){ tot++; if(v==='presente') pr++; } });
+  return tot ? Math.round(pr/tot*100) : null;
+}
+function labPeopleHTML(lab){
+  return `
+    <div class="card card-pad row">
+      <div class="grow"><div class="li-title">Numero di partecipanti</div><div class="li-meta">Non serve inserire i nomi di tutti</div></div>
+      <input type="number" inputmode="numeric" min="0" max="999" value="${lab.numeroPartecipanti ?? ''}" placeholder="—"
+        style="width:84px;text-align:center;font-size:20px;font-weight:700;padding:8px;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface)"
+        onchange="state.labs['${lab.id}'].numeroPartecipanti = this.value ? Math.max(0, parseInt(this.value,10)) : null; persist(); render();">
+    </div>
+    <div class="section-label">Bambini con attenzioni particolari
+      <button class="link-btn" style="text-transform:none;letter-spacing:0" onclick="openPersonSheet('${lab.id}')">${I.plus}Aggiungi</button></div>
+    ${lab.participants.length === 0 ? `<div class="card empty" style="padding:24px"><p style="margin:0">Aggiungi qui solo chi ha bisogno di un'attenzione in più: allergie, esigenze, un contatto di emergenza.</p></div>` :
+    `<div class="card">${lab.participants.map(p => {
+      const r = attRate(lab, p);
+      const tel = (p.contattoTelefono||'').replace(/[^\d+]/g,'');
+      return `<div class="list-item" style="align-items:flex-start">
+        <div class="avatar" style="background:${colorFor(p.name)}">${esc(initials(p.name))}</div>
+        <div class="grow">
+          <div class="li-title">${esc(p.name)}${p.eta ? `<span class="li-meta" style="font-weight:400"> · ${p.eta} anni</span>` : ''}</div>
+          ${p.note ? `<div style="font-size:14.5px;margin-top:3px">${esc(p.note)}</div>` : ''}
+          ${(p.contattoNome || p.contattoTelefono) ? `<div class="li-meta" style="margin-top:6px">${esc(p.contattoNome || 'Contatto')}${p.contattoTelefono ? ` · <a class="contact-link" href="tel:${esc(tel)}">${I.phone}${esc(p.contattoTelefono)}</a>` : ''}</div>` : ''}
+          ${r !== null ? `<div class="li-meta" style="margin-top:4px">Presenze ${r}%</div>` : ''}
+        </div>
+        <button class="icon-btn" onclick="openPersonSheet('${lab.id}','${p.id}')" aria-label="Modifica">${I.edit}</button>
+      </div>`; }).join('')}</div>`}`;
+}
+function openPersonSheet(labId, pid){
+  const lab = state.labs[labId];
+  const p = pid ? lab.participants.find(x => x.id === pid) : null;
+  openSheet(`${sheetHead(p ? 'Modifica' : 'Bambino/a con attenzioni')}
+    <form onsubmit="submitPerson(event,'${labId}',${p ? `'${p.id}'` : 'null'})">
+      <div class="field-row">
+        <div class="field" style="flex:3"><label>Nome</label><input id="pName" required value="${p ? esc(p.name) : ''}" placeholder="Es. Giulia B."></div>
+        <div class="field"><label>Età</label><input id="pEta" type="number" inputmode="numeric" min="0" max="99" value="${p?.eta ?? ''}"></div>
+      </div>
+      <div class="field"><label>Cosa sapere</label><textarea id="pNote" placeholder="Es. intollerante al lattosio, ha bisogno di tempi più lunghi…">${p ? esc(p.note||'') : ''}</textarea></div>
+      <div class="field-row">
+        <div class="field"><label>Chi chiamare</label><input id="pCN" value="${p ? esc(p.contattoNome||'') : ''}" placeholder="Es. mamma Laura"></div>
+        <div class="field"><label>Telefono</label><input id="pCT" type="tel" inputmode="tel" value="${p ? esc(p.contattoTelefono||'') : ''}" placeholder="333 1234567"></div>
+      </div>
+      <div class="sheet-actions">
+        ${p ? `<button type="button" class="btn danger" style="flex:0 0 auto" onclick="confirmSheet('Eliminare ${esc(p.name.replace(/[\'"\\]/g,''))}?','Si tolgono anche le sue presenze e il ruolo nello spettacolo.','Elimina','deletePerson','${labId}','${p.id}')">${I.trash}</button>` : ''}
+        <button type="submit" class="btn">Salva</button>
+      </div>
+    </form>`);
+}
+function submitPerson(e, labId, pid){
+  e.preventDefault();
+  const lab = state.labs[labId];
+  const d = { name: document.getElementById('pName').value.trim(), eta: document.getElementById('pEta').value ? Number(document.getElementById('pEta').value) : null,
+    note: document.getElementById('pNote').value.trim(), contattoNome: document.getElementById('pCN').value.trim(), contattoTelefono: document.getElementById('pCT').value.trim() };
+  if(!d.name) return;
+  if(pid) Object.assign(lab.participants.find(x => x.id === pid), d); else lab.participants.push({ id:uid(), ...d });
+  persist(); closeSheet();
+}
+function deletePerson(labId, pid){
+  const lab = state.labs[labId];
+  lab.participants = lab.participants.filter(p => p.id !== pid);
+  lab.sessions.forEach(s => delete s.presenze[pid]);
+  lab.show.cast.forEach(c => { if(c.participantId === pid) c.participantId = ''; });
+  persist();
+}
+
+/* ---------- SPETTACOLO ---------- */
+function labShowHTML(lab){
+  const sh = lab.show;
+  return `
+    <input class="inline-input" style="font-family:var(--font-display);font-size:22px;padding:8px 2px" value="${esc(sh.titolo)}" placeholder="Titolo dello spettacolo" onchange="state.labs['${lab.id}'].show.titolo=this.value.trim(); persist();">
+    <div class="section-label">Scene · ${sh.scene.length}<button class="link-btn" style="text-transform:none;letter-spacing:0" onclick="addScene('${lab.id}')">${I.plus}Scena</button></div>
+    ${sh.scene.length ? `<div class="card">${sh.scene.map((sc,i) => `<div class="scene">
+        <div class="scene-n">${i+1}</div>
+        <div class="grow">
+          <input class="inline-input" value="${esc(sc.nome)}" placeholder="Nome della scena" onchange="updScene('${lab.id}','${sc.id}','nome',this.value)">
+          <textarea class="inline-area" placeholder="Cosa succede, note di regia" onchange="updScene('${lab.id}','${sc.id}','descrizione',this.value)">${esc(sc.descrizione)}</textarea>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <button class="icon-btn" onclick="moveScene('${lab.id}','${sc.id}',-1)" ${i===0?'disabled style="opacity:.3"':''} aria-label="Su">${I.up}</button>
+          <button class="icon-btn" onclick="confirmSheet('Eliminare la scena?','La scena viene tolta dalla scaletta.','Elimina','delScene','${lab.id}','${sc.id}')" aria-label="Elimina">${I.trash}</button>
+        </div>
+      </div>`).join('')}</div>` : `<div class="card empty" style="padding:22px"><p style="margin:0">Nessuna scena. Aggiungi la prima per costruire la scaletta.</p></div>`}
+    <div class="section-label">Cast · ${sh.cast.length}<button class="link-btn" style="text-transform:none;letter-spacing:0" onclick="addCast('${lab.id}')">${I.plus}Personaggio</button></div>
+    ${sh.cast.length ? `<div class="card">${sh.cast.map(c => `<div class="cast-row">
+        <input class="inline-input" value="${esc(c.personaggio)}" placeholder="Personaggio" onchange="updCast('${lab.id}','${c.id}','personaggio',this.value)">
+        <button class="icon-btn" onclick="confirmSheet('Eliminare il personaggio?','Viene tolto dal cast.','Elimina','delCast','${lab.id}','${c.id}')" aria-label="Elimina">${I.trash}</button>
+        <div class="cast-selects">
+          ${lab.participants.length ? `<select onchange="updCast('${lab.id}','${c.id}','participantId',this.value)"><option value="">Chi lo interpreta</option>
+            ${lab.participants.map(p => `<option value="${p.id}" ${c.participantId===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>`
+          : `<input class="inline-input" style="font-weight:400;font-size:15px" value="${esc(c.interprete||'')}" placeholder="Chi lo interpreta" onchange="updCast('${lab.id}','${c.id}','interprete',this.value)">`}
+          <select onchange="updCast('${lab.id}','${c.id}','sceneId',this.value)"><option value="">Scena</option>
+            ${sh.scene.map((sc,i) => `<option value="${sc.id}" ${c.sceneId===sc.id?'selected':''}>${i+1}. ${esc(sc.nome||'Scena')}</option>`).join('')}</select>
+        </div>
+      </div>`).join('')}</div>` : `<div class="card empty" style="padding:22px"><p style="margin:0">Nessun personaggio ancora.</p></div>`}
+    <div class="section-label">Note di regia</div>
+    <textarea class="notes" placeholder="Idee, scenografia, costumi, musiche…" onchange="state.labs['${lab.id}'].show.note=this.value; persist();">${esc(sh.note)}</textarea>`;
+}
+function addScene(labId){ state.labs[labId].show.scene.push({ id:uid(), nome:'', descrizione:'' }); persist(); render(); }
+function updScene(labId, id, f, v){ const sc = state.labs[labId].show.scene.find(s => s.id === id); if(sc){ sc[f] = v; persist(); } }
+function moveScene(labId, id, d){ const a = state.labs[labId].show.scene; const i = a.findIndex(s => s.id === id), j = i + d; if(j<0||j>=a.length) return; [a[i],a[j]]=[a[j],a[i]]; persist(); render(); }
+function delScene(labId, id){ const sh = state.labs[labId].show; sh.scene = sh.scene.filter(s => s.id !== id); sh.cast.forEach(c => { if(c.sceneId === id) c.sceneId = ''; }); persist(); }
+function addCast(labId){ state.labs[labId].show.cast.push({ id:uid(), personaggio:'', participantId:'', sceneId:'', interprete:'' }); persist(); render(); }
+function updCast(labId, id, f, v){ const c = state.labs[labId].show.cast.find(x => x.id === id); if(c){ c[f] = v; persist(); } }
+function delCast(labId, id){ const sh = state.labs[labId].show; sh.cast = sh.cast.filter(c => c.id !== id); persist(); }
+
+/* ============================================================
+   ESERCIZI
+   ============================================================ */
+let openEx = {};
+function renderExercises(){
+  V().innerHTML = `
+    <div class="row" style="justify-content:space-between;margin-bottom:14px">
+      <h1 class="h1">Esercizi</h1>
+      <button class="btn small" onclick="openExSheet()">${I.plus}Nuovo</button>
+    </div>
+    <div class="search" style="margin-bottom:12px">${I.search}<input id="exSearch" placeholder="Cerca tra ${state.exercises.length} esercizi" value="${esc(exFilter.search)}" oninput="exFilter.search=this.value; renderExList();"></div>
+    <div class="chips">
+      <button class="chip ${exFilter.category==='tutti'?'on':''}" onclick="exFilter.category='tutti'; render();">Tutti</button>
+      ${CATEGORIES.map(c => `<button class="chip ${exFilter.category===c.id?'on':''}" onclick="exFilter.category='${c.id}'; render();"><span class="dot" style="background:${catColor(c.id)}"></span>${c.label}</button>`).join('')}
+    </div>
+    <div id="exList" style="margin-top:12px"></div>`;
+  renderExList();
+}
+function exUsage(id){ let n=0; Object.values(state.labs).forEach(l => l.sessions.forEach(s => s.esercizi.forEach(e => { if(e.exerciseId===id && e.fatto) n++; }))); return n; }
+function renderExList(){
+  const el = document.getElementById('exList'); if(!el) return;
+  const t = exFilter.search.trim().toLowerCase();
+  const list = state.exercises.filter(ex => (exFilter.category==='tutti' || ex.categoria===exFilter.category) &&
+    (!t || ex.titolo.toLowerCase().includes(t) || (ex.descrizione||'').toLowerCase().includes(t) || (ex.materiali||'').toLowerCase().includes(t)))
+    .sort((a,b) => a.titolo.localeCompare(b.titolo));
+  if(!list.length){ el.innerHTML = `<div class="card empty">${I.book}<p>Nessun esercizio trovato.</p><button class="btn" onclick="openExSheet(null, document.getElementById('exSearch').value)">${I.plus}Crea esercizio</button></div>`; return; }
+  el.innerHTML = `<div class="card">${list.map(ex => {
+    const used = exUsage(ex.id);
+    const open = !!openEx[ex.id];
+    return `<div class="ex-item tap" onclick="openEx['${ex.id}']=!openEx['${ex.id}']; renderExList();">
+      <div class="ex-top">
+        <span class="dot" style="background:${catColor(ex.categoria)}"></span>
+        <div class="grow li-title">${esc(ex.titolo)}</div>
+        <span class="badge">${ex.durata} min</span>
+      </div>
+      ${ex.descrizione ? `<div class="ex-desc ${open ? '' : 'clamp'}">${esc(ex.descrizione)}</div>` : ''}
+      ${open ? `
+        ${ex.materiali ? `<div class="ex-mat">Materiali: ${esc(ex.materiali)}</div>` : ''}
+        <div class="row" style="margin-top:8px">
+          <span class="li-meta grow">${esc(catInfo(ex.categoria).label)}${used ? ` · fatto ${used} ${used===1?'volta':'volte'}` : ''}</span>
+          <button class="btn secondary small" onclick="event.stopPropagation(); openExSheet('${ex.id}')">${I.edit}Modifica</button>
+        </div>` : ''}
+    </div>`; }).join('')}</div>`;
+}
+function openExSheet(id, presetTitle){
+  const ex = id ? state.exercises.find(x => x.id === id) : null;
+  openSheet(`${sheetHead(ex ? 'Modifica esercizio' : 'Nuovo esercizio')}
+    <form onsubmit="submitEx(event, ${ex ? `'${ex.id}'` : 'null'})">
+      <div class="field"><label>Titolo</label><input id="eT" required value="${esc(ex ? ex.titolo : (presetTitle||''))}" placeholder="Es. Lo specchio"></div>
+      <div class="field-row">
+        <div class="field" style="flex:2"><label>Categoria</label><select id="eC">${CATEGORIES.map(c => `<option value="${c.id}" ${ex && ex.categoria===c.id?'selected':''}>${c.label}</option>`).join('')}</select></div>
+        <div class="field"><label>Minuti</label><input id="eD" type="number" inputmode="numeric" min="1" max="180" value="${ex ? ex.durata : 10}"></div>
+      </div>
+      <div class="field"><label>Come si svolge</label><textarea id="eDesc" style="min-height:120px">${ex ? esc(ex.descrizione) : ''}</textarea></div>
+      <div class="field"><label>Materiali (facoltativo)</label><input id="eM" value="${ex ? esc(ex.materiali||'') : ''}" placeholder="Es. un foulard a testa"></div>
+      <div class="sheet-actions">
+        ${ex ? `<button type="button" class="btn danger" style="flex:0 0 auto" onclick="confirmSheet('Eliminare l\\'esercizio?','Viene tolto dalla libreria e dalle checklist degli incontri.','Elimina','deleteEx','${ex.id}')">${I.trash}</button>` : ''}
+        <button type="submit" class="btn">Salva</button>
+      </div>
+    </form>`);
+}
+function submitEx(e, id){
+  e.preventDefault();
+  const d = { titolo: document.getElementById('eT').value.trim(), categoria: document.getElementById('eC').value,
+    durata: Number(document.getElementById('eD').value) || 10, descrizione: document.getElementById('eDesc').value.trim(), materiali: document.getElementById('eM').value.trim() };
+  if(!d.titolo) return;
+  if(id) Object.assign(state.exercises.find(x => x.id === id), d); else state.exercises.push({ id:uid(), ...d });
+  persist(); closeSheet();
+}
+function deleteEx(id){
+  state.exercises = state.exercises.filter(x => x.id !== id);
+  Object.values(state.labs).forEach(l => l.sessions.forEach(s => { s.esercizi = s.esercizi.filter(e => e.exerciseId !== id); }));
+  persist(); toast('Esercizio eliminato');
+}
+
+/* ============================================================
+   ACCOUNT E BACKUP
+   ============================================================ */
+function openAccountSheet(){
+  const where = MODE === 'firebase'
+    ? `Sei collegato come <strong>${esc(fbUser?.email || '')}</strong>. I dati si sincronizzano da soli su computer, telefono e iPad.`
+    : `I dati sono salvati solo in questo browser. Per spostarli su un altro dispositivo usa Esporta e Importa.`;
+  openSheet(`${sheetHead('Account e backup')}
+    <p style="font-size:15px">${where}</p>
+    <div class="section-label" style="margin-top:18px">Copia di sicurezza</div>
+    <p class="sub" style="margin-top:-4px">Un file con tutti i tuoi laboratori, utile da tenere su Drive ogni tanto.</p>
+    <div class="sheet-actions" style="margin-top:12px">
+      <button class="btn secondary" onclick="exportBackup()">Esporta</button>
+      <button class="btn secondary" onclick="document.getElementById('importFileInput').click()">Importa</button>
+    </div>
+    ${MODE === 'firebase' && fbUser ? `<button class="btn ghost block" style="margin-top:22px" onclick="closeSheet(); fbAuth.signOut();">Esci</button>` : ''}`);
+}
+function exportBackup(){
+  if(!state) return;
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `quaderno-regia-backup-${todayISO()}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  toast('Backup scaricato');
+}
+let pendingImport = null;
+function handleImportFile(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try{
+      pendingImport = migrate(JSON.parse(e.target.result));
+      openSheet(`${sheetHead('Importare il backup?')}<p class="sub" style="font-size:15px">I dati attuali vengono sostituiti da quelli del file (${Object.keys(pendingImport.labs).length} laboratori, ${pendingImport.exercises.length} esercizi).</p>
+        <div class="sheet-actions"><button class="btn secondary" onclick="closeSheet()">Annulla</button><button class="btn" onclick="state=pendingImport; pendingImport=null; persist(); viewingLabId=null; closeSheet(); toast('Backup importato');">Importa</button></div>`);
+    }catch(err){ toast('Questo file non è un backup del Quaderno'); }
+    input.value = '';
+  };
+  r.readAsText(f);
+}
+
+/* ============================================================
+   GATE: CARICAMENTO / LOGIN
+   ============================================================ */
+function renderLoading(){ V().innerHTML = `<div class="empty" style="padding-top:80px">Caricamento…</div>`; }
+function renderLoginGate(){
+  V().innerHTML = `<div class="gate">
+    <h1 class="h1" style="margin-bottom:6px">Bentornato</h1>
+    <p class="sub" style="font-size:15px;margin-bottom:22px">Accedi con la tua email e password. Su questo dispositivo te lo chiedo una volta sola.</p>
+    <form class="card card-pad" onsubmit="doLogin(event)">
+      <div class="auth-msg" id="authMsg"></div>
+      <div class="field"><label>Email</label><input id="aEmail" type="email" autocomplete="username" required></div>
+      <div class="field"><label>Password</label><input id="aPass" type="password" autocomplete="current-password" required></div>
+      <button class="btn block" type="submit">Accedi</button>
+      <div style="text-align:center;margin-top:10px"><button type="button" class="link-btn" onclick="doReset()">Password dimenticata?</button></div>
+    </form>
+  </div>`;
+}
+function authMsg(text, ok){ const el = document.getElementById('authMsg'); if(el){ el.textContent = text; el.classList.toggle('ok', !!ok); } }
+function authErr(e){
+  const m = { 'auth/invalid-email':'Email non valida.', 'auth/wrong-password':'Password errata.', 'auth/user-not-found':'Nessun account con questa email.',
+    'auth/invalid-credential':'Email o password non corrette.', 'auth/network-request-failed':'Nessuna connessione. Riprova.', 'auth/too-many-requests':'Troppi tentativi, riprova tra qualche minuto.' };
+  return m[e.code] || ('Errore: ' + (e.message || e.code));
+}
+async function doLogin(e){
+  e.preventDefault();
+  try{ await fbAuth.signInWithEmailAndPassword(document.getElementById('aEmail').value.trim().toLowerCase(), document.getElementById('aPass').value); }
+  catch(err){ authMsg(authErr(err)); }
+}
+async function doReset(){
+  const email = document.getElementById('aEmail').value.trim();
+  if(!email){ authMsg('Scrivi la tua email, poi tocca di nuovo “Password dimenticata?”.'); return; }
+  try{ await fbAuth.sendPasswordResetEmail(email); authMsg('Ti ho mandato una email per reimpostare la password.', true); }
+  catch(err){ authMsg(authErr(err)); }
+}
+function renderDeniedGate(){
+  showChrome(false);
+  V().innerHTML = `<div class="gate card card-pad"><h2 class="h2">Accesso non consentito</h2>
+    <p class="sub" style="font-size:15px">Il database non permette a ${esc(fbUser?.email || 'questo account')} di leggere i dati. Controlla le regole di Firestore.</p>
+    <button class="btn secondary" onclick="fbAuth.signOut()">Esci</button></div>`;
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+let toastTimer = null;
+function toast(msg){
+  const root = document.getElementById('toastRoot');
+  root.innerHTML = `<div class="toast">${esc(msg)}</div>`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { root.innerHTML = ''; }, 2600);
+}
+
+init();
+</script>
+</body>
+</html>
