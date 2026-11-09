@@ -250,6 +250,18 @@ div.search input{ width:100%; padding:13px 14px 13px 42px; border-radius:12px; b
 .toast button{ border:none; background:none; color:var(--gold); font-weight:700; padding:0; }
 .contact-link{ color:var(--accent); font-weight:650; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
 .hidden{ display:none !important; }
+.desc-1{ font-size:13px; color:var(--muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:1px; }
+.newex{ background:var(--surface); border:1px solid var(--line-strong); border-radius:12px; padding:14px; margin-top:10px; }
+.newex .field{ margin-bottom:10px; }
+.feedback{ display:flex; gap:8px; padding:0 8px 8px 46px; flex-wrap:wrap; }
+.fb-btn{ border:1px solid var(--line-strong); background:var(--surface); border-radius:99px; padding:6px 12px; font-size:13px; font-weight:600; color:var(--ink); display:inline-flex; align-items:center; gap:6px; }
+.fb-btn.has{ background:var(--gold-soft); border-color:transparent; }
+.fb-btn.has.var{ background:var(--green-soft); }
+.note-list{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+.note-item{ border-radius:10px; padding:9px 12px; font-size:14px; }
+.note-item.problema{ background:var(--gold-soft); }
+.note-item.variante{ background:var(--green-soft); }
+.note-item .nm{ font-size:12px; color:var(--muted); font-weight:600; margin-bottom:2px; display:flex; justify-content:space-between; gap:8px; }
 </style>
 </head>
 <body>
@@ -387,6 +399,7 @@ function migrate(parsed){
     });
   });
   if(!Array.isArray(st.exercises)) st.exercises = seedExercises();
+  st.exercises.forEach(ex => { if(!Array.isArray(ex.note)) ex.note = []; if(ex.materiali === undefined) ex.materiali = ''; if(ex.descrizione === undefined) ex.descrizione = ''; });
   if(!st.appTitle) st.appTitle = 'I miei laboratori';
   return st;
 }
@@ -513,7 +526,7 @@ function sessionNumber(lab, s){ return sortedSessions(lab).findIndex(x => x.id =
 function sessionTitle(lab, s){
   if(s.titolo) return s.titolo;
   const n = sessionNumber(lab, s);
-  return `Incontro ${n}${lab.incontriPrevisti ? ' di ' + lab.incontriPrevisti : ''}`;
+  return `Incontro ${n}${lab.incontriPrevisti && n <= lab.incontriPrevisti ? ' di ' + lab.incontriPrevisti : ''}`;
 }
 function isConcluded(lab){
   if(lab.concluso === true) return true;
@@ -679,8 +692,10 @@ function sessionCard(lab, s, opts){
         <div class="grow">
           <div class="check-title">${esc(e.ex.titolo)}</div>
           <div class="check-meta"><span class="dot" style="background:${catColor(e.ex.categoria)}"></span>${esc(catInfo(e.ex.categoria).label)} · ${e.ex.durata} min</div>
+          ${e.ex.descrizione && !e.fatto ? `<div class="desc-1">${esc(e.ex.descrizione)}</div>` : ''}
         </div>
-      </div>`).join('')}</div>` : ''}
+      </div>
+      ${e.fatto ? feedbackButtons(lab, s, e.ex) : ''}`).join('')}</div>` : ''}
     ${attOpen ? attendanceBlock(lab, s) : ''}
     <div class="s-foot">
       <button class="link-btn" onclick="openSessionSheet({ editId:'${s.id}' })">${I.edit}Modifica</button>
@@ -702,6 +717,42 @@ function attendanceBlock(lab, s){
       </div>
     </div>`; }).join('')}</div>`;
 }
+function notesFor(ex, sid, tipo){ return (ex.note||[]).filter(n => n.sessionId === sid && n.tipo === tipo); }
+function feedbackButtons(lab, s, ex){
+  const p = notesFor(ex, s.id, 'problema').length, v = notesFor(ex, s.id, 'variante').length;
+  return `<div class="feedback">
+    <button class="fb-btn ${p ? 'has' : ''}" onclick="openNoteSheet('${lab.id}','${s.id}','${ex.id}','problema')">${p ? '✓ ' : ''}Cosa non ha funzionato?</button>
+    <button class="fb-btn var ${v ? 'has var' : ''}" onclick="openNoteSheet('${lab.id}','${s.id}','${ex.id}','variante')">${v ? '✓ ' : ''}Varianti</button>
+  </div>`;
+}
+const NOTE_LABEL = { problema:'Cosa non ha funzionato?', variante:'Varianti' };
+function openNoteSheet(labId, sid, exId, tipo){
+  const ex = state.exercises.find(x => x.id === exId); if(!ex) return;
+  const lab = state.labs[labId]; const s = lab.sessions.find(x => x.id === sid);
+  const existing = notesFor(ex, sid, tipo)[0];
+  openSheet(`${sheetHead(NOTE_LABEL[tipo])}
+    <p class="sub" style="margin-top:-6px">${esc(ex.titolo)} · ${esc(lab.nome)}, ${esc(fmtShort(s.date))}</p>
+    <form onsubmit="saveNote(event,'${labId}','${sid}','${exId}','${tipo}')">
+      <div class="field"><textarea id="nText" style="min-height:130px" placeholder="${tipo === 'problema' ? 'Es. troppo lungo per bambini di 6 anni, il gruppo si è disperso…' : 'Es. fatto a coppie invece che in cerchio, con musica di sottofondo…'}">${existing ? esc(existing.testo) : ''}</textarea></div>
+      <p class="hint" style="margin-top:-6px">La nota resta salvata nella scheda dell'esercizio, in Esercizi.</p>
+      <div class="sheet-actions">
+        ${existing ? `<button type="button" class="btn danger" style="flex:0 0 auto" onclick="deleteNote('${exId}','${existing.id}'); closeSheet();">${I.trash}</button>` : ''}
+        <button type="submit" class="btn">Salva</button>
+      </div>
+    </form>`);
+  setTimeout(() => document.getElementById('nText')?.focus(), 80);
+}
+function saveNote(e, labId, sid, exId, tipo){
+  e.preventDefault();
+  const ex = state.exercises.find(x => x.id === exId);
+  const testo = document.getElementById('nText').value.trim();
+  const existing = notesFor(ex, sid, tipo)[0];
+  const lab = state.labs[labId]; const s = lab.sessions.find(x => x.id === sid);
+  if(existing){ if(testo) existing.testo = testo; else ex.note = ex.note.filter(n => n.id !== existing.id); }
+  else if(testo) ex.note.push({ id:uid(), tipo, testo, sessionId:sid, labNome:lab.nome, data:s.date });
+  persist(); closeSheet();
+}
+function deleteNote(exId, noteId){ const ex = state.exercises.find(x => x.id === exId); ex.note = ex.note.filter(n => n.id !== noteId); persist(); }
 function toggleDone(labId, sid, exId){
   const s = state.labs[labId].sessions.find(x => x.id === sid);
   const it = s.esercizi.find(e => e.exerciseId === exId);
@@ -780,7 +831,7 @@ function openSessionSheet(o){
         </div>
       </div>` : ''}
       <div class="field"><label>Esercizi da fare</label>
-        <div class="search">${I.search}<input id="fExSearch" placeholder="Cerca e aggiungi un esercizio" oninput="renderExResults()" autocomplete="off"></div>
+        <div class="search">${I.search}<input id="fExSearch" placeholder="Cerca e aggiungi un esercizio" oninput="renderExResults()" onkeydown="if(event.key==='Enter'){ event.preventDefault(); const r=document.querySelector('#exResults .result'); if(r) r.click(); }" autocomplete="off"></div>
         <div id="exResults" class="results"></div>
         <div id="exPicked"></div>
       </div>
@@ -805,24 +856,46 @@ function renderExResults(){
   box.innerHTML = m.map(ex => `<div class="result" onclick="pickEx('${ex.id}')">
       <span class="plus">${I.plus}</span>
       <div class="grow"><div style="font-weight:600">${esc(ex.titolo)}</div>
-      <div class="check-meta"><span class="dot" style="background:${catColor(ex.categoria)}"></span>${esc(catInfo(ex.categoria).label)} · ${ex.durata} min</div></div>
-    </div>`).join('') + (exact ? '' : `<div class="result" onclick="quickCreateEx()">
+      <div class="check-meta"><span class="dot" style="background:${catColor(ex.categoria)}"></span>${esc(catInfo(ex.categoria).label)} · ${ex.durata} min</div>
+      ${ex.descrizione ? `<div class="desc-1">${esc(ex.descrizione)}</div>` : ''}</div>
+    </div>`).join('') + (exact ? '' : `<div class="result" onclick="showNewExForm()">
       <span class="plus" style="background:var(--surface-2);color:var(--ink)">${I.plus}</span>
-      <div class="grow"><div style="font-weight:600">Crea “${esc(raw)}”</div><div class="check-meta">Nuovo esercizio nella libreria</div></div>
+      <div class="grow"><div style="font-weight:600">Crea “${esc(raw)}”</div><div class="check-meta">Nuovo esercizio: lo salvo anche nella libreria</div></div>
     </div>`);
 }
 function pickEx(id){
   sheetCtx.picked.push(id);
   const inp = document.getElementById('fExSearch'); inp.value = ''; renderExResults(); renderPicked(); inp.focus();
 }
-function quickCreateEx(){
+function showNewExForm(){
   const inp = document.getElementById('fExSearch');
-  const titolo = inp.value.trim(); if(!titolo) return;
-  const ex = { id:uid(), titolo, categoria:'altro', durata:10, descrizione:'', materiali:'' };
+  const titolo = inp.value.trim();
+  document.getElementById('exResults').innerHTML = `<div class="newex">
+    <div style="font-weight:650;margin-bottom:10px">Nuovo esercizio</div>
+    <div class="field"><label>Titolo</label><input id="nxT" value="${esc(titolo)}"></div>
+    <div class="field-row">
+      <div class="field" style="flex:2"><label>Categoria</label><select id="nxC">${CATEGORIES.map(c => `<option value="${c.id}" ${c.id==='altro'?'selected':''}>${c.label}</option>`).join('')}</select></div>
+      <div class="field"><label>Minuti</label><input id="nxD" type="number" inputmode="numeric" min="1" max="180" value="10"></div>
+    </div>
+    <div class="field"><label>Come si svolge</label><textarea id="nxDesc" style="min-height:90px"></textarea></div>
+    <div class="field"><label>Materiali (facoltativo)</label><input id="nxM" placeholder="Es. un foulard a testa"></div>
+    <div class="row" style="gap:10px">
+      <button type="button" class="btn secondary" style="flex:1" onclick="document.getElementById('exResults').innerHTML=''">Annulla</button>
+      <button type="button" class="btn" style="flex:2" onclick="createExFromForm()">Aggiungi all'incontro</button>
+    </div>
+  </div>`;
+  setTimeout(() => document.getElementById(titolo ? 'nxDesc' : 'nxT')?.focus(), 50);
+}
+function createExFromForm(){
+  const titolo = document.getElementById('nxT').value.trim();
+  if(!titolo){ document.getElementById('nxT').focus(); return; }
+  const ex = { id:uid(), titolo, categoria: document.getElementById('nxC').value, durata: Number(document.getElementById('nxD').value) || 10,
+    descrizione: document.getElementById('nxDesc').value.trim(), materiali: document.getElementById('nxM').value.trim(), note:[] };
   state.exercises.push(ex);
   persist();
+  document.getElementById('exResults').innerHTML = '';
   pickEx(ex.id);
-  toast('Esercizio aggiunto alla libreria: puoi completarlo dopo');
+  toast('Esercizio salvato anche nella libreria');
 }
 function unpickEx(id){ sheetCtx.picked = sheetCtx.picked.filter(x => x !== id); renderPicked(); renderExResults(); }
 function moveEx(id, dir){
@@ -836,7 +909,7 @@ function renderPicked(){
   const mins = list.reduce((a,e) => a + (Number(e.durata)||0), 0);
   el.innerHTML = `<div class="picked">${list.map((ex,i) => `<div class="picked-item">
       <span class="dot" style="background:${catColor(ex.categoria)}"></span>
-      <div class="grow"><div style="font-weight:600;font-size:15px">${esc(ex.titolo)}</div><div class="check-meta">${ex.durata} min</div></div>
+      <div class="grow"><div style="font-weight:600;font-size:15px">${esc(ex.titolo)} <span class="check-meta" style="display:inline;font-weight:400">· ${ex.durata} min</span></div>${ex.descrizione ? `<div class="desc-1">${esc(ex.descrizione)}</div>` : ''}</div>
       ${list.length > 1 ? `<button type="button" class="icon-btn" onclick="moveEx('${ex.id}',-1)" ${i===0?'disabled style="opacity:.3"':''} aria-label="Sposta su">${I.up}</button>` : ''}
       <button type="button" class="icon-btn" onclick="unpickEx('${ex.id}')" aria-label="Togli">${I.x}</button>
     </div>`).join('')}</div><p class="hint">${list.length} esercizi · circa ${mins} minuti</p>`;
@@ -1152,11 +1225,17 @@ function renderExList(){
       <div class="ex-top">
         <span class="dot" style="background:${catColor(ex.categoria)}"></span>
         <div class="grow li-title">${esc(ex.titolo)}</div>
+        ${(ex.note||[]).length ? `<span class="badge green">${ex.note.length} note</span>` : ''}
         <span class="badge">${ex.durata} min</span>
       </div>
       ${ex.descrizione ? `<div class="ex-desc ${open ? '' : 'clamp'}">${esc(ex.descrizione)}</div>` : ''}
       ${open ? `
         ${ex.materiali ? `<div class="ex-mat">Materiali: ${esc(ex.materiali)}</div>` : ''}
+        ${(ex.note||[]).length ? `<div class="note-list">${ex.note.slice().sort((x,y) => (y.data||'').localeCompare(x.data||'')).map(n => `
+          <div class="note-item ${n.tipo}">
+            <div class="nm"><span>${n.tipo === 'problema' ? 'Non ha funzionato' : 'Variante'}</span><span>${esc(n.labNome||'')}${n.data ? ' · ' + esc(fmtShort(n.data)) : ''}</span></div>
+            <div style="white-space:pre-wrap">${esc(n.testo)}</div>
+          </div>`).join('')}</div>` : ''}
         <div class="row" style="margin-top:8px">
           <span class="li-meta grow">${esc(catInfo(ex.categoria).label)}${used ? ` · fatto ${used} ${used===1?'volta':'volte'}` : ''}</span>
           <button class="btn secondary small" onclick="event.stopPropagation(); openExSheet('${ex.id}')">${I.edit}Modifica</button>
@@ -1185,7 +1264,7 @@ function submitEx(e, id){
   const d = { titolo: document.getElementById('eT').value.trim(), categoria: document.getElementById('eC').value,
     durata: Number(document.getElementById('eD').value) || 10, descrizione: document.getElementById('eDesc').value.trim(), materiali: document.getElementById('eM').value.trim() };
   if(!d.titolo) return;
-  if(id) Object.assign(state.exercises.find(x => x.id === id), d); else state.exercises.push({ id:uid(), ...d });
+  if(id) Object.assign(state.exercises.find(x => x.id === id), d); else state.exercises.push({ id:uid(), note:[], ...d });
   persist(); closeSheet();
 }
 function deleteEx(id){
