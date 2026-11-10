@@ -79,7 +79,7 @@ main{ max-width:760px; margin:0 auto; padding:16px 16px calc(var(--nav-h) + 96px
 /* ---------- BOTTOM NAV ---------- */
 .bottomnav{ position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--surface); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); }
 .bottomnav-inner{ max-width:760px; margin:0 auto; display:flex; height:var(--nav-h); }
-.navbtn{ flex:1; border:none; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:12px; font-weight:600; color:var(--muted); }
+.navbtn{ flex:1; min-width:0; border:none; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:11.5px; font-weight:600; color:var(--muted); }
 .navbtn svg.i{ width:23px; height:23px; }
 .navbtn.active{ color:var(--accent); }
 .fab{ position:fixed; z-index:31; right:max(18px, calc(50vw - 380px + 18px)); bottom:calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); height:56px; padding:0 22px 0 18px; border-radius:28px; border:none; background:var(--accent); color:var(--accent-ink); font-weight:650; font-size:16px; display:flex; align-items:center; gap:8px; box-shadow:var(--shadow-lg); }
@@ -183,7 +183,7 @@ details.concluded > summary::-webkit-details-marker{ display:none; }
 
 /* ---------- SEGMENTED TABS ---------- */
 .tabs{ display:flex; background:var(--surface-2); border-radius:12px; padding:4px; gap:4px; margin:16px 0; }
-.tabs button{ flex:1; border:none; background:none; padding:9px 6px; border-radius:9px; font-weight:650; font-size:14.5px; color:var(--muted); }
+.tabs button{ flex:1; min-width:0; border:none; background:none; padding:9px 2px; border-radius:9px; font-weight:650; font-size:13.5px; color:var(--muted); }
 .tabs button.on{ background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
 
 /* ---------- EXERCISES ---------- */
@@ -251,6 +251,15 @@ div.search input{ width:100%; padding:13px 14px 13px 42px; border-radius:12px; b
 .toast button{ border:none; background:none; color:var(--gold); font-weight:700; padding:0; }
 .contact-link{ color:var(--accent); font-weight:650; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
 .hidden{ display:none !important; }
+.tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.tile{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px; box-shadow:var(--shadow); min-width:0; }
+.tile.wide{ grid-column:1 / -1; }
+.tl{ font-size:12.5px; color:var(--muted); font-weight:600; }
+.tv{ font-size:22px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
+.tv.ok{ color:var(--green); }
+.tv.warn{ color:var(--gold); }
+.tsub{ font-size:13px; font-weight:500; color:var(--muted); }
+.badge.warn{ background:var(--gold-soft); color:var(--gold); }
 .place{ display:inline-flex; align-items:center; gap:4px; color:var(--muted); font-size:13.5px; text-decoration:none; }
 .place:active{ color:var(--accent); }
 .desc-1{ font-size:13px; color:var(--muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:1px; }
@@ -284,8 +293,8 @@ div.search input{ width:100%; padding:13px 14px 13px 42px; border-radius:12px; b
 
 <main id="view"></main>
 
-<button class="fab hidden" id="fab" onclick="openSessionSheet(tab==='agenda' ? { date: agendaDate } : {})">
-  <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Incontro
+<button class="fab hidden" id="fab" onclick="fabAction()">
+  <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span id="fabLabel">Incontro</span>
 </button>
 
 <nav class="bottomnav hidden" id="bottomnav">
@@ -296,8 +305,14 @@ div.search input{ width:100%; padding:13px 14px 13px 42px; border-radius:12px; b
     <button class="navbtn" data-tab="laboratori" onclick="setTab('laboratori')">
       <svg class="i" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>Laboratori
     </button>
+    <button class="navbtn" data-tab="spettacoli" onclick="setTab('spettacoli')">
+      <svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>Spettacoli
+    </button>
     <button class="navbtn" data-tab="esercizi" onclick="setTab('esercizi')">
       <svg class="i" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 1-2-2z"/><path d="M20 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2z"/></svg>Esercizi
+    </button>
+    <button class="navbtn" data-tab="conti" onclick="setTab('conti')">
+      <svg class="i" viewBox="0 0 24 24"><path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4 10.5h9M4 13.5h9"/></svg>Conti
     </button>
   </div>
 </nav>
@@ -373,7 +388,7 @@ function luoghiDatalist(){ const set = [...new Set(Object.values(state.labs).map
 function newLab(nome, previsti){
   return { id:uid(), nome, incontriPrevisti: previsti || null, numeroPartecipanti:null, concluso:null, participants:[], sessions:[], show:{ titolo:'', scene:[], cast:[], note:'' } };
 }
-function defaultState(){ return { appTitle:'I miei laboratori', labs:{}, exercises: seedExercises() }; }
+function defaultState(){ return { appTitle:'I miei laboratori', labs:{}, exercises: seedExercises(), spettacoli:[] }; }
 
 /* Compatibile con i dati delle versioni precedenti */
 function migrate(parsed){
@@ -404,6 +419,9 @@ function migrate(parsed){
     });
   });
   if(!Array.isArray(st.exercises)) st.exercises = seedExercises();
+  if(!Array.isArray(st.spettacoli)) st.spettacoli = [];
+  st.spettacoli.forEach(sp => { if(!sp.economia) sp.economia = emptyEco(); });
+  Object.values(st.labs).forEach(l => { if(!l.economia) l.economia = emptyEco(); });
   st.exercises.forEach(ex => { if(!Array.isArray(ex.note)) ex.note = []; if(ex.materiali === undefined) ex.materiali = ''; if(ex.descrizione === undefined) ex.descrizione = ''; });
   if(!st.appTitle) st.appTitle = 'I miei laboratori';
   return st;
@@ -567,12 +585,27 @@ function showChrome(on){
   updateFab(on);
 }
 function updateFab(on){
-  const show = on !== false && state && (tab === 'agenda' || (tab === 'laboratori' && viewingLabId && labTab === 'incontri'));
+  const isShow = tab === 'spettacoli' && !viewingShowId;
+  const show = on !== false && state && (tab === 'agenda' || isShow || (tab === 'laboratori' && viewingLabId && labTab === 'incontri'));
   document.getElementById('fab').classList.toggle('hidden', !show);
+  document.getElementById('fabLabel').textContent = isShow ? 'Spettacolo' : 'Incontro';
+}
+function fabAction(){
+  if(tab === 'spettacoli') return openShowSheet();
+  if(tab === 'agenda') return openAgendaAdd();
+  openSessionSheet({});
+}
+function openAgendaAdd(){
+  openSheet(`${sheetHead('Cosa aggiungi?')}
+    <div class="stack">
+      <button class="btn block" onclick="closeSheet(); openSessionSheet({ date: agendaDate })">${I.cal}Incontro di laboratorio</button>
+      <button class="btn secondary block" onclick="closeSheet(); openShowSheet()">${I.star}Spettacolo</button>
+    </div>`);
 }
 function setTab(t){
   if(!state) return;
   if(t === tab && t === 'laboratori') viewingLabId = null;
+  if(t === tab && t === 'spettacoli') viewingShowId = null;
   if(t === 'agenda' && tab === 'agenda') agendaDate = todayISO();
   tab = t;
   window.scrollTo(0,0);
@@ -583,6 +616,8 @@ function render(){
   document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   if(tab === 'agenda') renderAgenda();
   else if(tab === 'laboratori'){ if(viewingLabId && state.labs[viewingLabId]) renderLab(); else { viewingLabId = null; renderLabs(); } }
+  else if(tab === 'spettacoli') renderShows();
+  else if(tab === 'conti') renderConti();
   else renderExercises();
   updateFab();
 }
@@ -605,6 +640,7 @@ const I = {
   search:'<svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
   phone:'<svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
   pin:'<svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+  star:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
   layers:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
   done:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>'
 };
@@ -618,12 +654,14 @@ function renderAgenda(){
   const t = todayISO();
   const busy = new Set();
   Object.values(state.labs).forEach(l => l.sessions.forEach(s => busy.add(s.date)));
+  state.spettacoli.forEach(sp => sp.data && busy.add(sp.data));
+  const shows = showsOn(agendaDate);
   const monthLabel = dateOf(agendaDate).toLocaleDateString('it-IT', { month:'long', year:'numeric' });
   const items = sessionsOn(agendaDate);
 
   let body;
-  if(items.length){
-    body = `<div class="stack">${items.map(it => sessionCard(it.lab, it.s, { showLab:true })).join('')}</div>`;
+  if(items.length || shows.length){
+    body = `<div class="stack">${shows.map(showAgendaCard).join('')}${items.map(it => sessionCard(it.lab, it.s, { showLab:true })).join('')}</div>`;
   }else{
     const upcoming = [];
     Object.values(state.labs).forEach(lab => lab.sessions.forEach(s => { if(s.date > agendaDate) upcoming.push({ lab, s }); }));
@@ -1037,8 +1075,9 @@ function renderLab(){
       <button class="${labTab==='incontri'?'on':''}" onclick="labTab='incontri'; render();">Incontri</button>
       <button class="${labTab==='partecipanti'?'on':''}" onclick="labTab='partecipanti'; render();">Partecipanti</button>
       <button class="${labTab==='spettacolo'?'on':''}" onclick="labTab='spettacolo'; render();">Spettacolo</button>
+      <button class="${labTab==='conti'?'on':''}" onclick="labTab='conti'; render();">Conti</button>
     </div>
-    <div id="labBody">${labTab === 'incontri' ? labSessionsHTML(lab) : labTab === 'partecipanti' ? labPeopleHTML(lab) : labShowHTML(lab)}</div>`;
+    <div id="labBody">${labTab === 'incontri' ? labSessionsHTML(lab) : labTab === 'partecipanti' ? labPeopleHTML(lab) : labTab === 'conti' ? economiaHTML('lab', lab.id) : labShowHTML(lab)}</div>`;
 }
 function labSessionsHTML(lab){
   if(!lab.sessions.length) return `<div class="card empty">${I.cal}<p>Nessun incontro ancora. Puoi crearli tutti insieme con “Ripeti ogni settimana”.</p>
@@ -1286,6 +1325,326 @@ function deleteEx(id){
   state.exercises = state.exercises.filter(x => x.id !== id);
   Object.values(state.labs).forEach(l => l.sessions.forEach(s => { s.esercizi = s.esercizi.filter(e => e.exerciseId !== id); }));
   persist(); toast('Esercizio eliminato');
+}
+
+/* ============================================================
+   ECONOMIA (laboratori e spettacoli)
+   ============================================================ */
+const EUR = new Intl.NumberFormat('it-IT', { style:'currency', currency:'EUR', maximumFractionDigits:2 });
+function eur(n){ return EUR.format(Number(n)||0).replace(',00',''); }
+function num(v){ const n = parseFloat(String(v).replace(/\./g,'').replace(',', '.')); return isFinite(n) ? n : 0; }
+function emptyEco(){ return { pagatori:[], incassi:[], costi:[] }; }
+function ownerOf(kind, id){ return kind === 'lab' ? state.labs[id] : state.spettacoli.find(x => x.id === id); }
+function ownerName(kind, o){ return kind === 'lab' ? o.nome : o.titolo; }
+function ecoOf(kind, id){ const o = ownerOf(kind, id); if(!o.economia) o.economia = emptyEco(); return o.economia; }
+function paidBy(eco, pid){ return eco.incassi.filter(x => x.pagatoreId === pid).reduce((a,x) => a + (Number(x.importo)||0), 0); }
+function ecoTotals(eco){
+  eco = eco || emptyEco();
+  let dovuto=0, incassato=0, residuo=0;
+  eco.pagatori.forEach(p => { const pd = paidBy(eco, p.id); dovuto += Number(p.dovuto)||0; residuo += Math.max(0, (Number(p.dovuto)||0) - pd); });
+  incassato = eco.incassi.reduce((a,x) => a + (Number(x.importo)||0), 0);
+  const costi = eco.costi.reduce((a,x) => a + (Number(x.importo)||0), 0);
+  return { dovuto, incassato, residuo, costi, netto: incassato - costi, nettoPrevisto: Math.max(dovuto, incassato) - costi };
+}
+function ecoTiles(t){
+  return `<div class="tiles">
+    <div class="tile"><div class="tl">Previsto</div><div class="tv">${eur(t.dovuto)}</div></div>
+    <div class="tile"><div class="tl">Incassato</div><div class="tv ok">${eur(t.incassato)}</div></div>
+    <div class="tile"><div class="tl">Da incassare</div><div class="tv ${t.residuo > 0 ? 'warn' : ''}">${eur(t.residuo)}</div></div>
+    <div class="tile"><div class="tl">Costi</div><div class="tv">${eur(t.costi)}</div></div>
+    <div class="tile wide"><div class="tl">Guadagno netto (incassato meno costi)</div><div class="tv">${eur(t.netto)}${t.nettoPrevisto !== t.netto ? `<span class="tsub"> · a fine pagamenti ${eur(t.nettoPrevisto)}</span>` : ''}</div></div>
+  </div>`;
+}
+function economiaHTML(kind, id){
+  const o = ownerOf(kind, id); const eco = ecoOf(kind, id); const t = ecoTotals(eco);
+  const lbl = `'${kind}','${id}'`;
+  return `${ecoTiles(t)}
+    <div class="section-label">Chi paga · ${eco.pagatori.length}<button class="link-btn" style="text-transform:none;letter-spacing:0" onclick="openPayerSheet(${lbl})">${I.plus}Aggiungi</button></div>
+    ${eco.pagatori.length ? `<div class="card">${eco.pagatori.map(p => {
+      const pd = paidBy(eco, p.id); const due = Number(p.dovuto)||0; const res = Math.max(0, due - pd);
+      const pct = due ? Math.min(100, Math.round(pd/due*100)) : (pd ? 100 : 0);
+      return `<div class="list-item tap" onclick="openPayerDetail(${lbl},'${p.id}')">
+        <div class="grow">
+          <div class="row" style="gap:8px"><span class="li-title grow">${esc(p.nome)}</span>
+            ${due && res === 0 ? `<span class="badge green">Saldato</span>` : res > 0 ? `<span class="badge warn">Mancano ${eur(res)}</span>` : ''}</div>
+          <div class="li-meta">${eur(pd)}${due ? ` di ${eur(due)}` : ' incassati'}</div>
+          ${due ? `<div class="bar" style="max-width:none"><span style="width:${pct}%;background:var(--green)"></span></div>` : ''}
+        </div>
+        <span class="chev">${I.right}</span>
+      </div>`; }).join('')}</div>`
+    : `<div class="card empty" style="padding:22px"><p style="margin:0">Aggiungi chi ti paga: un ente con il prezzo totale, oppure le persone che pagano a quote.</p></div>`}
+    <div class="section-label">Costi · ${eur(t.costi)}<button class="link-btn" style="text-transform:none;letter-spacing:0" onclick="openCostSheet(${lbl})">${I.plus}Aggiungi</button></div>
+    ${eco.costi.length ? `<div class="card">${eco.costi.slice().sort((a,b) => (b.data||'').localeCompare(a.data||'')).map(c => `
+      <div class="list-item tap" onclick="openCostSheet(${lbl},'${c.id}')">
+        <div class="grow"><div class="li-title" style="font-weight:600">${esc(c.descrizione || 'Costo')}</div><div class="li-meta">${c.data ? esc(fmtShort(c.data)) : ''}</div></div>
+        <span style="font-weight:650">${eur(c.importo)}</span>
+      </div>`).join('')}</div>`
+    : `<div class="card empty" style="padding:22px"><p style="margin:0">Nessun costo. Es. materiali, viaggi, affitto sala.</p></div>`}`;
+}
+function rerenderSheetOr(){ closeSheet(); }
+function openPayerSheet(kind, id, pid){
+  const eco = ecoOf(kind, id); const p = pid ? eco.pagatori.find(x => x.id === pid) : null;
+  openSheet(`${sheetHead(p ? 'Modifica' : 'Chi ti paga')}
+    <form onsubmit="submitPayer(event,'${kind}','${id}',${p ? `'${p.id}'` : 'null'})">
+      ${p ? `<div class="field"><label>Nome</label><input id="pyNome" required value="${esc(p.nome)}"></div>`
+          : `<div class="field"><label>Nome</label><textarea id="pyNome" required style="min-height:60px" placeholder="Es. Comune di Clusone"></textarea>
+             <p class="hint">Se pagano più persone la stessa quota, scrivi un nome per riga: le aggiungo tutte insieme.</p></div>`}
+      <div class="field"><label>${p ? 'Importo dovuto' : 'Importo dovuto (a testa)'}</label><input id="pyDue" inputmode="decimal" value="${p ? (p.dovuto ?? '') : ''}" placeholder="Es. 300"></div>
+      ${!p ? `<div class="field"><label>Ha già pagato (facoltativo)</label><input id="pyPaid" inputmode="decimal" placeholder="Es. 100"></div>` : ''}
+      <div class="sheet-actions">
+        ${p ? `<button type="button" class="btn danger" style="flex:0 0 auto" onclick="confirmSheet('Eliminare ${esc(p.nome.replace(/['"\\]/g,''))}?','Si cancellano anche i suoi pagamenti registrati.','Elimina','deletePayer','${kind}','${id}','${p.id}')">${I.trash}</button>` : ''}
+        <button type="submit" class="btn">Salva</button>
+      </div>
+    </form>`);
+}
+function submitPayer(e, kind, id, pid){
+  e.preventDefault();
+  const eco = ecoOf(kind, id);
+  const due = num(document.getElementById('pyDue').value);
+  if(pid){
+    const p = eco.pagatori.find(x => x.id === pid);
+    p.nome = document.getElementById('pyNome').value.trim() || p.nome; p.dovuto = due;
+  }else{
+    const names = document.getElementById('pyNome').value.split('\n').map(x => x.trim()).filter(Boolean);
+    const paid = num(document.getElementById('pyPaid').value);
+    names.forEach(n => {
+      const p = { id:uid(), nome:n, dovuto:due }; eco.pagatori.push(p);
+      if(paid > 0) eco.incassi.push({ id:uid(), pagatoreId:p.id, importo:paid, data:todayISO(), nota:'' });
+    });
+    if(names.length > 1) toast(`Aggiunte ${names.length} persone`);
+  }
+  persist(); closeSheet();
+}
+function deletePayer(kind, id, pid){ const eco = ecoOf(kind, id); eco.pagatori = eco.pagatori.filter(x => x.id !== pid); eco.incassi = eco.incassi.filter(x => x.pagatoreId !== pid); persist(); }
+function openPayerDetail(kind, id, pid){
+  const eco = ecoOf(kind, id); const p = eco.pagatori.find(x => x.id === pid); if(!p) return;
+  const pd = paidBy(eco, pid); const res = Math.max(0, (Number(p.dovuto)||0) - pd);
+  const list = eco.incassi.filter(x => x.pagatoreId === pid).sort((a,b) => (b.data||'').localeCompare(a.data||''));
+  openSheet(`${sheetHead(p.nome)}
+    <p class="sub" style="margin-top:-8px;font-size:15px">${esc(ownerName(kind, ownerOf(kind,id)))} · ${eur(pd)}${p.dovuto ? ` di ${eur(p.dovuto)}` : ''}${res ? ` · mancano <strong>${eur(res)}</strong>` : p.dovuto ? ' · saldato' : ''}</p>
+    <form onsubmit="addPayment(event,'${kind}','${id}','${pid}')" class="card card-pad" style="margin-top:14px">
+      <div style="font-weight:650;margin-bottom:10px">Registra un pagamento</div>
+      <div class="field-row">
+        <div class="field"><label>Importo</label><input id="pmImp" inputmode="decimal" required value="${res || ''}" placeholder="Es. 100"></div>
+        <div class="field"><label>Data</label><input id="pmData" type="date" value="${todayISO()}"></div>
+      </div>
+      <div class="field"><label>Nota (facoltativo)</label><input id="pmNota" placeholder="Es. contanti, bonifico…"></div>
+      <button class="btn block" type="submit">${res ? 'Registra' : 'Registra'}</button>
+    </form>
+    ${list.length ? `<div class="section-label">Pagamenti ricevuti</div><div class="card">${list.map(x => `
+      <div class="list-item">
+        <div class="grow"><div class="li-title">${eur(x.importo)}</div><div class="li-meta">${esc(fmtShort(x.data))}${x.nota ? ' · ' + esc(x.nota) : ''}</div></div>
+        <button class="icon-btn" onclick="deletePayment('${kind}','${id}','${x.id}'); openPayerDetail('${kind}','${id}','${pid}')" aria-label="Elimina">${I.trash}</button>
+      </div>`).join('')}</div>` : ''}
+    <button class="btn ghost block" style="margin-top:18px" onclick="openPayerSheet('${kind}','${id}','${pid}')">${I.edit}Modifica nome e importo</button>`);
+}
+function addPayment(e, kind, id, pid){
+  e.preventDefault();
+  const imp = num(document.getElementById('pmImp').value); if(!imp) return;
+  ecoOf(kind, id).incassi.push({ id:uid(), pagatoreId:pid, importo:imp, data: document.getElementById('pmData').value || todayISO(), nota: document.getElementById('pmNota').value.trim() });
+  persist(); toast(`Registrati ${eur(imp)}`); openPayerDetail(kind, id, pid);
+}
+function deletePayment(kind, id, payId){ const eco = ecoOf(kind, id); eco.incassi = eco.incassi.filter(x => x.id !== payId); persist(); }
+function openCostSheet(kind, id, cid){
+  const eco = ecoOf(kind, id); const c = cid ? eco.costi.find(x => x.id === cid) : null;
+  openSheet(`${sheetHead(c ? 'Modifica costo' : 'Nuovo costo')}
+    <form onsubmit="submitCost(event,'${kind}','${id}',${c ? `'${c.id}'` : 'null'})">
+      <div class="field"><label>Descrizione</label><input id="cDesc" required value="${c ? esc(c.descrizione) : ''}" placeholder="Es. materiali scenografia"></div>
+      <div class="field-row">
+        <div class="field"><label>Importo</label><input id="cImp" inputmode="decimal" required value="${c ? c.importo : ''}" placeholder="Es. 45"></div>
+        <div class="field"><label>Data</label><input id="cData" type="date" value="${c ? (c.data||'') : todayISO()}"></div>
+      </div>
+      <div class="sheet-actions">
+        ${c ? `<button type="button" class="btn danger" style="flex:0 0 auto" onclick="deleteCost('${kind}','${id}','${c.id}'); closeSheet();">${I.trash}</button>` : ''}
+        <button type="submit" class="btn">Salva</button>
+      </div>
+    </form>`);
+}
+function submitCost(e, kind, id, cid){
+  e.preventDefault();
+  const eco = ecoOf(kind, id);
+  const d = { descrizione: document.getElementById('cDesc').value.trim(), importo: num(document.getElementById('cImp').value), data: document.getElementById('cData').value };
+  if(cid) Object.assign(eco.costi.find(x => x.id === cid), d); else eco.costi.push({ id:uid(), ...d });
+  persist(); closeSheet();
+}
+function deleteCost(kind, id, cid){ const eco = ecoOf(kind, id); eco.costi = eco.costi.filter(x => x.id !== cid); persist(); }
+
+/* ============================================================
+   SPETTACOLI
+   ============================================================ */
+let viewingShowId = null;
+function showStatus(sp){
+  const t = ecoTotals(sp.economia);
+  if(!t.dovuto && !t.incassato) return '';
+  if(t.residuo > 0) return `<span class="badge warn">Da incassare ${eur(t.residuo)}</span>`;
+  return `<span class="badge green">Incassato</span>`;
+}
+function showRow(sp){
+  return `<div class="list-item tap" onclick="viewingShowId='${sp.id}'; window.scrollTo(0,0); render();">
+    <div style="min-width:46px;text-align:center"><div style="font-weight:700;font-size:19px;line-height:1">${sp.data ? dateOf(sp.data).getDate() : '–'}</div><div class="li-meta" style="text-transform:uppercase;font-size:11.5px;font-weight:650">${sp.data ? dateOf(sp.data).toLocaleDateString('it-IT',{month:'short'}).replace('.','') : ''}</div></div>
+    <div class="grow">
+      <div class="li-title">${esc(sp.titolo)}</div>
+      <div class="li-meta">${sp.data ? esc(dateOf(sp.data).toLocaleDateString('it-IT',{weekday:'long', year:'numeric'})) : ''}${sp.ora ? ' · ' + sp.ora : ''}</div>
+      ${sp.luogo ? `<div style="margin-top:2px">${placeLink(sp)}</div>` : ''}
+      <div style="margin-top:6px">${showStatus(sp)}</div>
+    </div>
+    <span class="chev">${I.right}</span>
+  </div>`;
+}
+function renderShows(){
+  if(viewingShowId && state.spettacoli.find(x => x.id === viewingShowId)) return renderShow();
+  viewingShowId = null;
+  const t = todayISO();
+  const list = state.spettacoli.slice().sort((a,b) => (a.data||'').localeCompare(b.data||''));
+  const up = list.filter(s => (s.data||'9999') >= t), past = list.filter(s => (s.data||'9999') < t).reverse();
+  V().innerHTML = `
+    <div class="row" style="justify-content:space-between;margin-bottom:14px">
+      <h1 class="h1">Spettacoli</h1>
+      <button class="btn small" onclick="openShowSheet()">${I.plus}Nuovo</button>
+    </div>
+    ${!list.length ? `<div class="card empty">${I.star}<p>Qui tieni le date dei tuoi spettacoli, dove si fanno, chi ti paga e se hai incassato.</p><button class="btn" onclick="openShowSheet()">${I.plus}Nuovo spettacolo</button></div>` : `
+      ${up.length ? `<div class="section-label" style="margin-top:6px">In arrivo · ${up.length}</div><div class="card">${up.map(showRow).join('')}</div>` : ''}
+      ${past.length ? `<div class="section-label">Già fatti · ${past.length}</div><div class="card">${past.map(showRow).join('')}</div>` : ''}`}`;
+}
+function renderShow(){
+  const sp = state.spettacoli.find(x => x.id === viewingShowId);
+  V().innerHTML = `
+    <button class="link-btn" style="margin-left:-6px" onclick="viewingShowId=null; render();">${I.left}Spettacoli</button>
+    <div class="row" style="align-items:flex-start;margin-top:4px">
+      <div class="grow">
+        <h1 class="h1">${esc(sp.titolo)}</h1>
+        <div class="sub" style="font-size:15px;margin-top:2px">${sp.data ? esc(fmtLong(sp.data)) : 'Data da definire'}${sp.ora ? ' · ' + sp.ora : ''}</div>
+        ${sp.luogo ? `<div style="margin-top:4px">${placeLink(sp, 'style="font-size:15px"')}</div>` : ''}
+      </div>
+      <button class="icon-btn" onclick="openShowSheet('${sp.id}')" aria-label="Modifica">${I.edit}</button>
+    </div>
+    ${sp.note ? `<div class="s-note" style="margin:14px 0 0">${esc(sp.note)}</div>` : ''}
+    <div class="section-label">Conti</div>
+    ${economiaHTML('show', sp.id)}`;
+}
+function openShowSheet(id){
+  const sp = id ? state.spettacoli.find(x => x.id === id) : null;
+  openSheet(`${sheetHead(sp ? 'Modifica spettacolo' : 'Nuovo spettacolo')}
+    <form onsubmit="submitShow(event, ${sp ? `'${sp.id}'` : 'null'})">
+      <div class="field"><label>Titolo</label><input id="spT" required value="${sp ? esc(sp.titolo) : ''}" placeholder="Es. Il mago di Oz"></div>
+      <div class="field-row">
+        <div class="field" style="flex:3"><label>Giorno</label><input id="spD" type="date" value="${sp ? (sp.data||'') : (tab==='agenda' ? agendaDate : todayISO())}"></div>
+        <div class="field" style="flex:2"><label>Ora</label><input id="spO" type="time" value="${sp ? (sp.ora||'') : ''}"></div>
+      </div>
+      <div class="field"><label>Luogo</label><input id="spL" value="${sp ? esc(sp.luogo||'') : ''}" placeholder="Es. Teatro di Clusone" list="luoghiList">${luoghiDatalist()}</div>
+      ${!sp ? `<div class="field-row">
+        <div class="field" style="flex:3"><label>Chi ti paga</label><input id="spChi" placeholder="Es. Pro Loco"></div>
+        <div class="field" style="flex:2"><label>Compenso</label><input id="spEur" inputmode="decimal" placeholder="Es. 500"></div>
+      </div>` : ''}
+      <div class="field"><label>Note (facoltativo)</label><textarea id="spN" placeholder="Orari prove, contatti, materiale…">${sp ? esc(sp.note||'') : ''}</textarea></div>
+      <div class="sheet-actions">
+        ${sp ? `<button type="button" class="btn danger" style="flex:0 0 auto" onclick="confirmSheet('Eliminare lo spettacolo?','Si cancellano anche i suoi conti.','Elimina','deleteShow','${sp.id}')">${I.trash}</button>` : ''}
+        <button type="submit" class="btn">${sp ? 'Salva' : 'Crea spettacolo'}</button>
+      </div>
+    </form>`);
+}
+function submitShow(e, id){
+  e.preventDefault();
+  const d = { titolo: document.getElementById('spT').value.trim(), data: document.getElementById('spD').value, ora: document.getElementById('spO').value,
+    luogo: document.getElementById('spL').value.trim(), note: document.getElementById('spN').value.trim() };
+  if(!d.titolo) return;
+  if(id) Object.assign(state.spettacoli.find(x => x.id === id), d);
+  else{
+    const sp = { id:uid(), ...d, economia: emptyEco() };
+    const chi = document.getElementById('spChi').value.trim(), imp = num(document.getElementById('spEur').value);
+    if(chi || imp) sp.economia.pagatori.push({ id:uid(), nome: chi || 'Committente', dovuto: imp });
+    state.spettacoli.push(sp);
+    if(tab === 'spettacoli') viewingShowId = sp.id;
+  }
+  persist(); closeSheet();
+}
+function deleteShow(id){ state.spettacoli = state.spettacoli.filter(x => x.id !== id); viewingShowId = null; persist(); toast('Spettacolo eliminato'); }
+function showsOn(date){ return state.spettacoli.filter(s => s.data === date).sort((a,b) => (a.ora||'99').localeCompare(b.ora||'99')); }
+function showAgendaCard(sp){
+  return `<div class="card s-card tap" onclick="tab='spettacoli'; viewingShowId='${sp.id}'; window.scrollTo(0,0); render();">
+    <div class="s-head">
+      <div class="s-time"><div class="t1">${sp.ora || '—'}</div></div>
+      <div class="grow">
+        <div class="s-lab">Spettacolo</div>
+        <div class="s-title">${esc(sp.titolo)}</div>
+        ${sp.luogo ? `<div style="margin-top:3px">${placeLink(sp)}</div>` : ''}
+        <div style="margin-top:6px">${showStatus(sp)}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   RIEPILOGO CONTI
+   ============================================================ */
+let contiYear = 'tutti';
+function activityYear(kind, o){
+  if(kind === 'show') return o.data ? o.data.slice(0,4) : '';
+  const d = o.sessions.map(s => s.date).sort()[0];
+  return d ? d.slice(0,4) : '';
+}
+function allActivities(){
+  const out = [];
+  Object.values(state.labs).forEach(l => out.push({ kind:'lab', o:l, id:l.id, nome:l.nome, anno: activityYear('lab', l), eco: l.economia || emptyEco() }));
+  state.spettacoli.forEach(s => out.push({ kind:'show', o:s, id:s.id, nome:s.titolo, anno: activityYear('show', s), eco: s.economia || emptyEco() }));
+  return out;
+}
+function goActivity(kind, id){
+  if(kind === 'lab'){ tab = 'laboratori'; viewingLabId = id; labTab = 'conti'; }
+  else { tab = 'spettacoli'; viewingShowId = id; }
+  window.scrollTo(0,0); render();
+}
+function renderConti(){
+  const acts = allActivities();
+  const years = [...new Set(acts.map(a => a.anno).filter(Boolean))].sort().reverse();
+  const sel = acts.filter(a => contiYear === 'tutti' || a.anno === contiYear);
+  const tot = { dovuto:0, incassato:0, residuo:0, costi:0, netto:0, nettoPrevisto:0 };
+  sel.forEach(a => { const t = ecoTotals(a.eco); Object.keys(tot).forEach(k => tot[k] += t[k]); });
+  const pending = [];
+  sel.forEach(a => a.eco.pagatori.forEach(p => { const r = Math.max(0, (Number(p.dovuto)||0) - paidBy(a.eco, p.id)); if(r > 0) pending.push({ a, p, r }); }));
+  pending.sort((x,y) => y.r - x.r);
+  const recent = [];
+  sel.forEach(a => a.eco.incassi.forEach(x => { const p = a.eco.pagatori.find(pp => pp.id === x.pagatoreId); recent.push({ a, x, nome: p ? p.nome : '' }); }));
+  recent.sort((u,v) => (v.x.data||'').localeCompare(u.x.data||''));
+  const withEco = sel.filter(a => a.eco.pagatori.length || a.eco.costi.length || a.eco.incassi.length);
+  V().innerHTML = `
+    <h1 class="h1" style="margin-bottom:12px">Conti</h1>
+    ${years.length > 1 ? `<div class="chips" style="margin-bottom:10px">
+      <button class="chip ${contiYear==='tutti'?'on':''}" onclick="contiYear='tutti'; render();">Tutto</button>
+      ${years.map(y => `<button class="chip ${contiYear===y?'on':''}" onclick="contiYear='${y}'; render();">${y}</button>`).join('')}
+    </div>` : ''}
+    ${ecoTiles(tot)}
+    <div class="section-label">Da incassare · ${eur(tot.residuo)}</div>
+    ${pending.length ? `<div class="card">${pending.slice(0,30).map(({a,p,r}) => `
+      <div class="list-item tap" onclick="goActivity('${a.kind}','${a.id}')">
+        <div class="grow"><div class="li-title">${esc(p.nome)}</div><div class="li-meta">${a.kind === 'show' ? 'Spettacolo · ' : ''}${esc(a.nome)} · pagato ${eur(paidBy(a.eco, p.id))} di ${eur(p.dovuto)}</div></div>
+        <span class="badge warn">${eur(r)}</span>
+      </div>`).join('')}</div>` : `<div class="card empty" style="padding:22px"><p style="margin:0">${withEco.length ? 'Tutto incassato.' : 'Ancora nessun dato. Aggiungi i conti dentro un laboratorio (scheda “Conti”) o in uno spettacolo.'}</p></div>`}
+    ${withEco.length ? `<div class="section-label">Per attività</div>
+      <div class="card">${withEco.map(a => { const t = ecoTotals(a.eco); return `
+        <div class="list-item tap" onclick="goActivity('${a.kind}','${a.id}')">
+          <div class="grow"><div class="li-title">${esc(a.nome)}</div>
+            <div class="li-meta">${a.kind === 'show' ? 'Spettacolo' : 'Laboratorio'} · incassati ${eur(t.incassato)} di ${eur(t.dovuto)}${t.costi ? ` · costi ${eur(t.costi)}` : ''}</div></div>
+          <div style="text-align:right"><div style="font-weight:700">${eur(t.netto)}</div><div class="li-meta" style="font-size:12px">netto</div></div>
+        </div>`; }).join('')}</div>` : ''}
+    ${recent.length ? `<div class="section-label">Ultimi incassi</div>
+      <div class="card">${recent.slice(0,8).map(({a,x,nome}) => `
+        <div class="list-item">
+          <div class="grow"><div class="li-title" style="font-weight:600">${esc(nome)}</div><div class="li-meta">${esc(a.nome)} · ${esc(fmtShort(x.data))}</div></div>
+          <span style="font-weight:650;color:var(--green)">+${eur(x.importo)}</span>
+        </div>`).join('')}</div>` : ''}
+    <div style="margin-top:20px"><button class="btn secondary block" onclick="exportCsv()">Scarica tabella per Excel</button></div>`;
+}
+function exportCsv(){
+  const rows = [['Tipo','Attività','Anno','Chi paga','Dovuto','Incassato','Da incassare']];
+  allActivities().forEach(a => {
+    a.eco.pagatori.forEach(p => { const pd = paidBy(a.eco, p.id); rows.push([a.kind==='lab'?'Laboratorio':'Spettacolo', a.nome, a.anno, p.nome, p.dovuto||0, pd, Math.max(0,(p.dovuto||0)-pd)]); });
+    a.eco.costi.forEach(c => rows.push([a.kind==='lab'?'Laboratorio':'Spettacolo', a.nome, a.anno, 'COSTO: ' + (c.descrizione||''), '', -(c.importo||0), '']));
+  });
+  const csv = rows.map(r => r.map(v => typeof v === 'number' ? String(v).replace('.', ',') : `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `conti-${todayISO()}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
 /* ============================================================
