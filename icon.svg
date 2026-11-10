@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <clipPath id="r"><rect width="512" height="512" rx="112"/></clipPath>
+    <radialGradient id="l" cx="50%" cy="78%" r="45%"><stop offset="0" stop-color="#FBE3E1" stop-opacity=".55"/><stop offset="1" stop-color="#FBE3E1" stop-opacity="0"/></radialGradient>
+  </defs>
+  <g clip-path="url(#r)">
+    <rect width="512" height="512" fill="#1E2328"/>
+    <rect width="512" height="512" fill="url(#l)"/>
+    <rect x="0" y="420" width="512" height="92" fill="#2B3138"/>
+    <path d="M0 80 H176 C166 190 140 262 104 312 C132 362 150 432 158 512 H0 Z" fill="#E2574C"/>
+    <path d="M512 80 H336 C346 190 372 262 408 312 C380 362 362 432 354 512 H512 Z" fill="#E2574C"/>
+    <path d="M52 90 C58 190 74 262 90 312" stroke="#C94A40" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <path d="M460 90 C454 190 438 262 422 312" stroke="#C94A40" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <circle cx="102" cy="314" r="16" fill="#F6C9C4"/>
+    <circle cx="410" cy="314" r="16" fill="#F6C9C4"/>
+    <path d="M0 0 H512 V96 C470 128 426 128 384 96 C342 128 298 128 256 96 C214 128 170 128 128 96 C86 128 42 128 0 96 Z" fill="#C94A40"/>
+  </g>
+</svg>

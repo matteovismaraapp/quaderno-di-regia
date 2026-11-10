@@ -3,10 +3,23 @@
   "short_name": "Quaderno",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#FBF7F1",
-  "theme_color": "#B23A3A",
+  "background_color": "#F5F6F7",
+  "theme_color": "#1E2328",
   "icons": [
-    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
   ]
 }

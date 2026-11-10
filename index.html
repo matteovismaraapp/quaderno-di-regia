@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#FBF7F1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1A1613" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F5F6F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15181C" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Quaderno">
 <title>Quaderno di Regia</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="icon" type="image/png" href="icon-180.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
@@ -18,14 +19,14 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 <style>
 :root{
-  --bg:#FBF7F1; --surface:#FFFFFF; --surface-2:#F4EEE5; --surface-3:#EBE3D7;
-  --ink:#2A211C; --muted:#76695E; --line:rgba(42,33,28,.11); --line-strong:rgba(42,33,28,.2);
-  --accent:#B23A3A; --accent-press:#962F2F; --accent-ink:#FFFFFF; --accent-soft:#F7E4E1;
-  --gold:#C98F22; --gold-soft:#F8ECD3; --green:#3F7A45; --green-soft:#E1EFDF;
-  --c-riscaldamento:#D39A2C; --c-fiducia:#3A7D77; --c-improvvisazione:#B23A3A; --c-voce:#8A4F7A;
-  --c-movimento:#4A6590; --c-simbolico:#4F7942; --c-altro:#8A8178;
-  --shadow:0 1px 2px rgba(42,33,28,.06), 0 4px 14px rgba(42,33,28,.06);
-  --shadow-lg:0 12px 40px rgba(42,33,28,.18);
+  --bg:#F5F6F7; --surface:#FFFFFF; --surface-2:#E8EAED; --surface-3:#DCDFE3;
+  --ink:#1E2328; --muted:#636B74; --line:rgba(30,35,40,.10); --line-strong:rgba(30,35,40,.2);
+  --accent:#E2574C; --accent-press:#C94A40; --accent-ink:#FFFFFF; --accent-soft:#FBE3E1;
+  --gold:#E0893A; --gold-soft:#FBE9D9; --green:#2F6FA8; --green-soft:#E0EBF6; --on-ok:#FFFFFF;
+  --c-riscaldamento:#E0793A; --c-fiducia:#2F6FA8; --c-improvvisazione:#C23B3B; --c-voce:#D46A8C;
+  --c-movimento:#8A5A3C; --c-simbolico:#1F95B0; --c-altro:#8A8F96;
+  --shadow:0 1px 2px rgba(30,35,40,.06), 0 4px 14px rgba(30,35,40,.06);
+  --shadow-lg:0 12px 40px rgba(30,35,40,.18);
   --radius:16px; --radius-sm:10px;
   --font-display:'Fraunces', Georgia, serif;
   --font-body:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
@@ -34,12 +35,12 @@
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#1A1613; --surface:#241E1A; --surface-2:#2E2621; --surface-3:#3A302A;
-    --ink:#F3EBE0; --muted:#B3A595; --line:rgba(243,235,224,.10); --line-strong:rgba(243,235,224,.2);
-    --accent:#E0645B; --accent-press:#C9554D; --accent-ink:#1A1613; --accent-soft:rgba(224,100,91,.16);
-    --gold:#E2B054; --gold-soft:rgba(226,176,84,.15); --green:#7DBB7F; --green-soft:rgba(125,187,127,.15);
-    --c-riscaldamento:#E2B054; --c-fiducia:#5FB0A8; --c-improvvisazione:#E0645B; --c-voce:#C68AB6;
-    --c-movimento:#86A3D0; --c-simbolico:#86B878; --c-altro:#A89F96;
+    --bg:#15181C; --surface:#1E2227; --surface-2:#272C32; --surface-3:#323840;
+    --ink:#ECEFF2; --muted:#9AA3AD; --line:rgba(236,239,242,.09); --line-strong:rgba(236,239,242,.18);
+    --accent:#F06B60; --accent-press:#DD5D52; --accent-ink:#15181C; --accent-soft:rgba(240,107,96,.16);
+    --gold:#F0A05A; --gold-soft:rgba(240,160,90,.15); --green:#6FA8E0; --green-soft:rgba(111,168,224,.16); --on-ok:#15181C;
+    --c-riscaldamento:#F0A05A; --c-fiducia:#6FA8E0; --c-improvvisazione:#F06B60; --c-voce:#E895B0;
+    --c-movimento:#C49A7A; --c-simbolico:#5CC3DB; --c-altro:#A3AAB2;
     --shadow:0 1px 2px rgba(0,0,0,.3); --shadow-lg:0 12px 40px rgba(0,0,0,.5);
     color-scheme: dark;
   }
@@ -137,7 +138,7 @@ main{ max-width:760px; margin:0 auto; padding:16px 16px calc(var(--nav-h) + 96px
 .check{ display:flex; align-items:center; gap:12px; padding:10px 8px; border-radius:10px; cursor:pointer; user-select:none; }
 .check:active{ background:var(--surface-2); }
 .box{ width:26px; height:26px; border-radius:8px; border:2px solid var(--line-strong); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .15s, border-color .15s; }
-.box svg{ width:16px; height:16px; stroke:#fff; stroke-width:3; fill:none; opacity:0; }
+.box svg{ width:16px; height:16px; stroke:var(--on-ok); stroke-width:3; fill:none; opacity:0; }
 .check.done .box{ background:var(--green); border-color:var(--green); }
 .check.done .box svg{ opacity:1; }
 .check.done .check-title{ color:var(--muted); text-decoration:line-through; text-decoration-color:var(--line-strong); }
@@ -152,7 +153,7 @@ main{ max-width:760px; margin:0 auto; padding:16px 16px calc(var(--nav-h) + 96px
 .att-name{ flex:1; font-size:15px; }
 .seg{ display:flex; background:var(--surface-2); border-radius:10px; padding:3px; gap:2px; }
 .seg button{ border:none; background:none; padding:6px 11px; border-radius:8px; font-size:13.5px; font-weight:650; color:var(--muted); }
-.seg button.on-P{ background:var(--green); color:#fff; }
+.seg button.on-P{ background:var(--green); color:var(--on-ok); }
 .seg button.on-A{ background:var(--accent); color:var(--accent-ink); }
 .seg button.on-G{ background:var(--gold); color:#fff; }
 .done-banner{ display:flex; align-items:center; gap:8px; color:var(--green); font-weight:650; font-size:14px; padding:2px 16px 10px; }
@@ -269,7 +270,7 @@ div.search input{ width:100%; padding:13px 14px 13px 42px; border-radius:12px; b
 <header class="topbar">
   <div class="topbar-inner">
     <div class="brand">
-      <span class="brand-mark"><svg class="i" viewBox="0 0 24 24"><path d="M4 4h16v6a8 8 0 0 1-16 0z"/><path d="M9 9h.01M15 9h.01M9.5 13a3.5 3.5 0 0 0 5 0"/></svg></span>
+      <img src="icon.svg" alt="" width="30" height="30" style="border-radius:8px;display:block">
       Quaderno di Regia
     </div>
     <div class="sync hidden" id="syncStatus"><span class="sync-dot"></span><span id="syncText">Sincronizzato</span></div>
@@ -347,7 +348,7 @@ const CATEGORIES = [
 function catInfo(id){ return CATEGORIES.find(c => c.id === id) || CATEGORIES[CATEGORIES.length-1]; }
 function catColor(id){ return `var(--c-${catInfo(id).id})`; }
 
-const AVATAR_COLORS = ['#B23A3A','#3A7D77','#8A4F7A','#4A6590','#C98F22','#4F7942'];
+const AVATAR_COLORS = ['#E2574C','#2F6FA8','#8A5A3C','#1F95B0','#D46A8C','#E0793A','#455A70'];
 function colorFor(name){ let h=0; for(let i=0;i<(name||'').length;i++) h=(h*31+name.charCodeAt(i))%AVATAR_COLORS.length; return AVATAR_COLORS[Math.abs(h)]; }
 function initials(name){ const p=(name||'').trim().split(/\s+/); return ((p[0]?.[0]||'')+(p[1]?.[0]||'')).toUpperCase(); }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
